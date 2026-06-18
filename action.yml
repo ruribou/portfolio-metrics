@@ -1579,6 +1579,18 @@ runs:
         else
           echo "Using a forked version"
           METRICS_IMAGE=metrics:forked-$METRICS_VERSION
+          # Prefer a pre-built image published to the fork's container registry (much faster than rebuilding); fall back to a local build
+          if [[ ! $METRICS_USE_PREBUILT_IMAGE =~ ^([Ff]alse|[Oo]ff|[Nn]o|0)$ ]] && [[ -n "$METRICS_ACTION_REPOSITORY" ]]; then
+            METRICS_FORK_TAG=$(echo "${METRICS_ACTION_REF:-latest}" | sed 's@[^a-zA-Z0-9._-]@-@g')
+            METRICS_FORK_IMAGE=ghcr.io/$(echo "$METRICS_ACTION_REPOSITORY" | tr '[:upper:]' '[:lower:]'):$METRICS_FORK_TAG
+            echo "Trying to pull pre-built forked image $METRICS_FORK_IMAGE"
+            if docker image pull "$METRICS_FORK_IMAGE"; then
+              echo "Using pre-built forked image $METRICS_FORK_IMAGE"
+              METRICS_IMAGE=$METRICS_FORK_IMAGE
+            else
+              echo "Could not pull pre-built forked image, will build it locally"
+            fi
+          fi
         fi
         echo "Image name: $METRICS_IMAGE"
 
@@ -1602,6 +1614,8 @@ runs:
       env:
         METRICS_ACTION: ${{ github.action }}
         METRICS_ACTION_PATH: ${{ github.action_path }}
+        METRICS_ACTION_REPOSITORY: ${{ github.action_repository }}
+        METRICS_ACTION_REF: ${{ github.action_ref }}
         METRICS_USE_PREBUILT_IMAGE: ${{ inputs.use_prebuilt_image }}
         INPUTS: ${{ toJson(inputs) }}
         TZ: ${{ inputs.config_timezone }}
