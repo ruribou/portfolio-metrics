@@ -36,6 +36,7 @@ export default async function({login, data, imports, q, rest, account}, {enabled
 
     //Custom colors
     const colorsets = JSON.parse(`${await imports.fs.readFile(`${imports.__module(import.meta.url)}/colorsets.json`)}`)
+    const fallbackColors = JSON.parse(`${await imports.fs.readFile(`${imports.__module(import.meta.url)}/colors.json`)}`)
     if ((`${colors}` in colorsets) && (limit <= 8))
       colors = colorsets[`${colors}`]
     colors = Object.fromEntries(decodeURIComponent(colors).split(",").map(x => x.trim().toLocaleLowerCase()).filter(x => x).map(x => x.split(":").map(x => x.trim())))
@@ -128,7 +129,7 @@ export default async function({login, data, imports, q, rest, account}, {enabled
         if ((colors[i]) && (!colors[name.toLocaleLowerCase()]))
           languages[section][i].color = colors[i]
         else
-          languages[section][i].color = customColors[name] ?? languages.colors[name] ?? "#ededed"
+          languages[section][i].color = customColors[name] ?? languages.colors[name] ?? fallbackColors[name.toLocaleLowerCase()] ?? "#ededed"
       }
     }
 
