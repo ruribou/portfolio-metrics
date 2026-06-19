@@ -1,3 +1,4 @@
+// @ts-nocheck -- TODO(ts): remove and type this (staged migration)
 //Imports
 import processes from "child_process"
 import fs from "fs/promises"

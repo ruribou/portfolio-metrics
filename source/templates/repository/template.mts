@@ -1,3 +1,4 @@
+// @ts-nocheck -- TODO(ts): remove and type this (staged migration)
 /**Template processor */
 export default async function({login, q}, {data, rest, graphql, queries, account}, {pending, imports}) {
   //Check arguments

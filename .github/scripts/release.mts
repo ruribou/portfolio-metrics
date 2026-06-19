@@ -1,3 +1,4 @@
+// @ts-nocheck -- TODO(ts): remove and type this (staged migration)
 //Imports
 import github from "@actions/github"
 import paths from "path"

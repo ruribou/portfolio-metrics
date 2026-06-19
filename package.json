@@ -4,20 +4,20 @@
   "description": "An infographics generator with 40+ plugins and 300+ options to display stats about your GitHub account and render them as SVG, Markdown, PDF or JSON!",
   "main": "index.mjs",
   "scripts": {
-    "start": "node source/app/web/index.mjs",
+    "start": "node --import tsx source/app/web/index.mts",
     "test": "jest --runInBand",
     "test-contrib": "jest --runInBand ci.test.js --noStackTrace",
     "test-presets": "jest --runInBand presets.test.js --noStackTrace",
     "test-metrics": "jest --runInBand metrics.test.js",
     "typecheck": "tsc --noEmit",
-    "build": "node .github/scripts/build.mjs",
-    "presets": "node .github/scripts/presets_examples.mjs",
-    "quickstart": "node .github/scripts/quickstart/index.mjs",
-    "preview": "node .github/scripts/preview.mjs",
-    "linter": "eslint source/**/*.mjs --quiet",
-    "dev": "nodemon source/app/web/index.mjs -e mjs,css,ejs,json",
+    "build": "node --import tsx .github/scripts/build.mts",
+    "presets": "node --import tsx .github/scripts/presets_examples.mts",
+    "quickstart": "node --import tsx .github/scripts/quickstart/index.mts",
+    "preview": "node --import tsx .github/scripts/preview.mts",
+    "linter": "eslint \"source/**/*.mts\" --quiet",
+    "dev": "nodemon --exec \"node --import tsx\" source/app/web/index.mts -e mts,css,ejs,json",
     "postinstall": "node node_modules/puppeteer/install.js",
-    "indepth": "node source/plugins/languages/analyzers.mjs"
+    "indepth": "node --import tsx source/plugins/languages/analyzers.mts"
   },
   "repository": {
     "type": "git",

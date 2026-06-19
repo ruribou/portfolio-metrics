@@ -1,3 +1,4 @@
+// @ts-nocheck -- TODO(ts): remove and type this (staged migration)
 //Imports
 import fs from "fs"
 import paths from "path"
