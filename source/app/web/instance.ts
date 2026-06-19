@@ -11,7 +11,6 @@ import url from "url"
 import util from "util"
 import mocks from "../../../tests/mocks/index.js"
 import metrics from "../metrics/index.ts"
-import type {Dict} from "../metrics/types.ts"
 import presets from "../metrics/presets.ts"
 import setup from "../metrics/setup.ts"
 
