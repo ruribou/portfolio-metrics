@@ -9,8 +9,8 @@
 export type Dict<T = any> = Record<string, T>
 
 // Context object destructured as the first argument of every plugin/template.
-// See source/app/metrics/index.mts (the `imports`/`data` construction) and
-// source/plugins/*/index.mts for the consumers.
+// See source/app/metrics/index.ts (the `imports`/`data` construction) and
+// source/plugins/*/index.ts for the consumers.
 export interface PluginContext {
   login: string
   q: Dict
@@ -37,7 +37,7 @@ export interface PluginOptions {
 export type Plugin = (context: PluginContext, options?: PluginOptions) => Promise<any>
 
 // The shared `imports` bag: utils spread + registries + metadata. Loosely typed
-// for now (it is assembled via object spread in index.mts).
+// for now (it is assembled via object spread in index.ts).
 export interface Imports {
   plugins: Dict
   templates: Dict

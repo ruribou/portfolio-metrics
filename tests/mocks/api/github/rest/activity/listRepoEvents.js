@@ -1,5 +1,5 @@
 //Imports
-import listEventsForAuthenticatedUser from "./listEventsForAuthenticatedUser.mjs"
+import listEventsForAuthenticatedUser from "./listEventsForAuthenticatedUser.js"
 
 /**Mocked data */
 export default async function({faker}, target, that, [{username: login, page, per_page}]) {

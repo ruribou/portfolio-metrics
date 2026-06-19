@@ -297,7 +297,7 @@ Since git lets you use any email and username for commits, *metrics* may not be 
 
 > ⚠️ Since this mode iterates over **each matching commit of each repository**, it is not suited for large code base, especially those with a large amount of commits and the ones containing binaries. While `plugin_languages_analysis_timeout` and `plugin_languages_analysis_timeout_repositories` can be used to increase the default timeout for analysis, please be responsible and keep this feature disabled if it cannot work on your account to save GitHub resources and our planet 🌏
 
-> ⚠️ Although *metrics* does not send any code to external sources, repositories are temporarily cloned on the GitHub Action runner. It is advised to keep this option disabled when working with sensitive data or company code. Use at your own risk, *metrics* and its authors **cannot** be held responsible for any resulting code leaks. Source code is available for auditing at [analyzers.mjs](/source/plugins/languages/analyzers.mjs).
+> ⚠️ Although *metrics* does not send any code to external sources, repositories are temporarily cloned on the GitHub Action runner. It is advised to keep this option disabled when working with sensitive data or company code. Use at your own risk, *metrics* and its authors **cannot** be held responsible for any resulting code leaks. Source code is available for auditing at [analyzers.ts](/source/plugins/languages/analyzers.ts).
 
 > 🌐 Web instances must enable this feature in `settings.json`
 

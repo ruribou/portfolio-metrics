@@ -16,7 +16,7 @@ action.run = async vars =>
   await new Promise((solve, reject) => {
     let [stdout, stderr] = ["", ""]
     const env = {...process.env, ...action.input(vars), GITHUB_REPOSITORY: "lowlighter/metrics"}
-    const child = processes.spawn("node", ["--import", "tsx", "source/app/action/index.mts"], {env})
+    const child = processes.spawn("node", ["--import", "tsx", "source/app/action/index.ts"], {env})
     child.stdout.on("data", data => stdout += data)
     child.stderr.on("data", data => stderr += data)
     child.on("close", code => {
@@ -33,7 +33,7 @@ web.run = async vars => (await axios.get(`http://localhost:3000/lowlighter?${new
 web.start = async () =>
   new Promise(solve => {
     let stdout = ""
-    web.instance = processes.spawn("node", ["--import", "tsx", "source/app/web/index.mts"], {env: {...process.env, SANDBOX: true}})
+    web.instance = processes.spawn("node", ["--import", "tsx", "source/app/web/index.ts"], {env: {...process.env, SANDBOX: true}})
     web.instance.stdout.on("data", data => (stdout += data, /Server ready !/.test(stdout) ? solve() : null))
     web.instance.stderr.on("data", data => console.error(`${data}`))
   })
@@ -88,7 +88,7 @@ const metadata = JSON.parse(`${
     "--input-type",
     "module",
     "--eval",
-    'import metadata from "./source/app/metrics/metadata.mts";console.log(JSON.stringify(await metadata({log:false})))',
+    'import metadata from "./source/app/metrics/metadata.ts";console.log(JSON.stringify(await metadata({log:false})))',
   ]).stdout
 }`)
 

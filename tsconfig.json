@@ -2,8 +2,8 @@
   "compilerOptions": {
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
-    "target": "ES2022",
-    "lib": ["ES2022", "DOM"],
+    "target": "ES2024",
+    "lib": ["ES2024", "DOM"],
 
     "allowJs": true,
     "checkJs": false,
@@ -20,12 +20,12 @@
     "types": ["node"]
   },
   "include": [
-    "source/**/*.mts",
     "source/**/*.ts",
-    ".github/scripts/**/*.mts"
+    ".github/scripts/**/*.ts"
   ],
   "exclude": [
     "node_modules",
+    ".github/scripts/quickstart/plugin/**",
     "source/app/web/statics/**",
     "source/plugins/community/splatoon/token.ts",
     "source/plugins/community/splatoon/s3si/**"

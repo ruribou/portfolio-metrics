@@ -1,6 +1,6 @@
 // @ts-nocheck -- TODO(ts): remove and type this plugin (staged migration)
 //Imports
-import assets from "./assets.mts"
+import assets from "./assets.ts"
 
 //Setup
 export default async function ({login, q, imports, data, account}, {enabled = false, extras = false, token, "statink.token": _statink_token} = {}) {

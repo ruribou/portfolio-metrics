@@ -1,6 +1,6 @@
 // @ts-nocheck -- TODO(ts): remove and type this plugin (staged migration)
 //Imports
-import * as compute from "./list/index.mts"
+import * as compute from "./list/index.ts"
 
 //Setup
 export default async function ({login, q, imports, data, computed, graphql, queries, rest, account}, {enabled = false, extras = false} = {}) {

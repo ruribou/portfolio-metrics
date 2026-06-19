@@ -1,8 +1,8 @@
 //Imports
 import ejs from "ejs"
 import util from "util"
-import * as utils from "./utils.mts"
-import type {Dict, Imports} from "./types.mts"
+import * as utils from "./utils.ts"
+import type {Dict, Imports} from "./types.ts"
 
 //Setup
 export default async function metrics({login, q}, {graphql, rest, plugins, conf, die = false, verify = false, convert = null, callbacks = null, warnings = []}, {Plugins, Templates}) {

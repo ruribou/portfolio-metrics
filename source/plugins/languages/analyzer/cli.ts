@@ -2,8 +2,8 @@
 //Imports
 import OctokitRest from "@octokit/rest"
 import yargsparser from "yargs-parser"
-import {IndepthAnalyzer} from "./indepth.mts"
-import {RecentAnalyzer} from "./recent.mts"
+import {IndepthAnalyzer} from "./indepth.ts"
+import {RecentAnalyzer} from "./recent.ts"
 
 const help = `
 
@@ -18,7 +18,7 @@ export async function cli() {
     console.log(help)
     return null
   }
-  const {default: setup} = await import("../../../app/metrics/setup.mts")
+  const {default: setup} = await import("../../../app/metrics/setup.ts")
   const {
     conf: {metadata},
   } = await setup({log: false})
@@ -47,7 +47,7 @@ export async function cli() {
   })
 
   //Prepare call
-  const imports = await import("../../../app/metrics/utils.mts")
+  const imports = await import("../../../app/metrics/utils.ts")
   const rest = argv.token ? new OctokitRest.Octokit({auth: argv.token, baseUrl: argv["api-url"]}) : null
 
   //Language analysis

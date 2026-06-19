@@ -9,11 +9,11 @@ This section explain how *metrics* is structured.
 
 * `source/app/metrics/` contains *metrics* engine files
 * `source/app/action/` contains GitHub action files
-  * `index.mjs` contains GitHub action entry point
+  * `index.ts` contains GitHub action entry point
   * `action.yml` contains GitHub action templated descriptor
 * `source/app/web/` contains web instance files
-  * `index.mjs` contains web instance entry point
-  * `instance.mjs` contains web instance source code
+  * `index.ts` contains web instance entry point
+  * `instance.ts` contains web instance source code
   * `settings.example.json` contains web instance settings example
   * `statics/` contains web instance static files
     * `app.js` contains web instance client source code
@@ -22,7 +22,7 @@ This section explain how *metrics* is structured.
   * `README.md` contains plugin documentation
   * `metadata.yml` contains plugin metadata
   * `examples.yml` contains plugin workflow examples
-  * `index.mjs` contains plugin source code
+  * `index.ts` contains plugin source code
   * `queries/` contains plugin GraphQL queries
 * `source/templates/*/` contains templates files
   * `README.md` contains template documentation
@@ -31,14 +31,14 @@ This section explain how *metrics* is structured.
   * `image.svg` contains template image used to render metrics
   * `style.css` contains style used to render metrics
   * `fonts.css` contains additional fonts used to render metrics
-  * `template.mjs` contains template source code
+  * `template.ts` contains template source code
 * `tests/` contains tests
   * `metrics.test.js` contains metrics testers
   * `source/app/mocks/` contains mocked data files
   * `api/` contains mocked api data
     * `axios/` contains external REST APIs mocked data
     * `github/` contains mocked GitHub api data
-  * `index.mjs` contains mockers
+  * `index.ts` contains mockers
 * `Dockerfile` contains docker instructions used to build metrics image
 * `package.json` contains dependencies and command line aliases
 

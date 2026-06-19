@@ -1,8 +1,8 @@
 // @ts-nocheck -- TODO(ts): remove and type this plugin (staged migration)
 //Imports
 import linguist from "linguist-js"
-import {filters} from "../../../app/metrics/utils.mts"
-import {Analyzer} from "./analyzer.mts"
+import {filters} from "../../../app/metrics/utils.ts"
+import {Analyzer} from "./analyzer.ts"
 
 /**Recent analyzer */
 export class RecentAnalyzer extends Analyzer {

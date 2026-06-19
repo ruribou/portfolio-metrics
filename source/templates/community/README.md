@@ -24,7 +24,7 @@ These templates will be downloaded through git and will be usable by prefixing t
     setup_community_templates: "user/repo@main:my-theme"
 ```
 
-For security reasons, community templates will use the `classic` template `template.mjs` instead of their own.
+For security reasons, community templates will use the `classic` template `template.ts` instead of their own.
 If you trust a community template, append `+trust` to it.
 
 *Example: using and trusting `my-theme` template by downloading it from `user/repo`*
@@ -178,7 +178,7 @@ formats:
 
 [`🧱 core`](/source/plugins/core/README.md) plugin (which is always called) will automatically verify user inputs against `supports` and `formats` values and throw an error in case of incompatibility.
 
-`extends` is used to define the fallback for `template.mjs` when a template is not trusted by user (depending  on whether you're building an user/organization or repository template, it is advised to either use `classic` or `repository`).
+`extends` is used to define the fallback for `template.ts` when a template is not trusted by user (depending  on whether you're building an user/organization or repository template, it is advised to either use `classic` or `repository`).
 
 `name`, `description` and `examples` are used to auto-generate documentation in the `README.md`.
 
