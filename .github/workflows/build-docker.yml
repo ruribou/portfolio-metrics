@@ -10,8 +10,7 @@ name: Build and publish Docker image
 on:
   push:
     branches:
-      - master
-      - fix/languages-color-fallback
+      - main
     paths:
       - Dockerfile
       - package.json
