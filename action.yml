@@ -1494,7 +1494,7 @@ inputs:
 
 # ====================================================================================
 # Action metadata
-name: Ruribou Portfolio Metrics
+name: ruribou Portfolio Metrics
 author: ruribou
 description: An infographics generator with 40+ plugins and 300+ options for GitHub stats. Fork of lowlighter/metrics.
 branding:
