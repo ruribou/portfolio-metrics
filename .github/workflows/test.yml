@@ -6,9 +6,11 @@
 name: CI
 
 on:
-  pull_request:
-    branches: [ main ]
+  # Type-check every working branch on push (not just main), and every PR to main.
   push:
+    branches:
+      - '**'
+  pull_request:
     branches: [ main ]
 
 jobs:
