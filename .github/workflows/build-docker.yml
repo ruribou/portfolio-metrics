@@ -1,10 +1,10 @@
-# Build the metrics image once and publish it to this fork's GitHub Container Registry,
+# Build the metrics image and publish it to this fork's GitHub Container Registry,
 # so workflows that consume the action can pull a pre-built image instead of rebuilding
 # it from the Dockerfile on every run. See action.yml (forked path) for the pull logic.
 #
-# NOTE: uses a plain `docker build` (dockerd's built-in BuildKit) on purpose. A buildx
-# docker-container builder stalls for tens of minutes on this heavy Chrome-based image,
-# whereas the plain build completes in ~8 minutes.
+# The Dockerfile layers this fork's source on top of the upstream pre-built image, so
+# the build is now trivial (a base pull + a source COPY) and finishes in seconds. The
+# timeout below is a guardrail against the multi-hour hangs the from-scratch build hit.
 name: Build and publish Docker image
 
 on:
@@ -24,9 +24,15 @@ permissions:
   contents: read
   packages: write
 
+# A newer push to the same branch supersedes an in-flight build.
+concurrency:
+  group: build-docker-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - name: Checkout
         uses: actions/checkout@v4
