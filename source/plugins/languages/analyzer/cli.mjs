@@ -17,7 +17,7 @@ export async function cli() {
     console.log(help)
     return null
   }
-  const {default: setup} = await import("../../../app/metrics/setup.mjs")
+  const {default: setup} = await import("../../../app/metrics/setup.mts")
   const {conf: {metadata}} = await setup({log: false})
   const {login, _: repositories, mode = "indepth"} = argv
   const {
@@ -46,7 +46,7 @@ export async function cli() {
   })
 
   //Prepare call
-  const imports = await import("../../../app/metrics/utils.mjs")
+  const imports = await import("../../../app/metrics/utils.mts")
   const rest = argv.token ? new OctokitRest.Octokit({auth: argv.token, baseUrl: argv["api-url"]}) : null
 
   //Language analysis

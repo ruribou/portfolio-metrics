@@ -60,7 +60,7 @@ export function s(value, end = "") {
 }
 
 /**Formatters */
-export function formatters({timeZone} = {}) {
+export function formatters({timeZone} = {} as any) {
   //Check options
   try {
     new Date().toLocaleString("fr", {timeZoneName: "short", timeZone})
@@ -70,7 +70,7 @@ export function formatters({timeZone} = {}) {
   }
 
   /**Formatter */
-  const format = function(n, {sign = false, unit = true, fixed} = {}) {
+  const format = function(n, {sign = false, unit = true, fixed} = {} as any) {
     if (unit) {
       for (const {u, v} of [{u: "b", v: 10 ** 9}, {u: "m", v: 10 ** 6}, {u: "k", v: 10 ** 3}]) {
         if (n / v >= 1)
@@ -127,7 +127,7 @@ export function formatters({timeZone} = {}) {
   }
 
   /**Error formatter */
-  format.error = function(error, {descriptions = {}, ...attributes} = {}) {
+  format.error = function(error, {descriptions = {} as any, ...attributes} = {}) {
     try {
       //Extras features or enable state error
       if ((error.extras) || (error.enabled))
@@ -216,10 +216,10 @@ export async function language({filename, patch}) {
 }
 
 /**Run command (use this to execute commands and process whole output at once, may not be suitable for large outputs) */
-export async function run(command, options, {prefixed = true, log = true, debug = true} = {}) {
+export async function run(command, options = {}, {prefixed = true, log = true, debug = true} = {}) {
   const prefix = {win32: "wsl"}[process.platform] ?? ""
   command = `${prefixed ? prefix : ""} ${command}`.trim()
-  return new Promise((solve, reject) => {
+  return new Promise<string>((solve, reject) => {
     if (debug)
       console.debug(`metrics/command/run > ${command}`)
     const child = processes.exec(command, options)
@@ -239,7 +239,7 @@ export async function run(command, options, {prefixed = true, log = true, debug 
 }
 
 /**Spawn command (use this to execute commands and process output on the fly) */
-export async function spawn(command, args = [], options = {}, {prefixed = true, timeout = 300 * 1000, stdout, debug = true} = {}) { //eslint-disable-line max-params
+export async function spawn(command, args = [], options = {}, {prefixed = true, timeout = 300 * 1000, stdout, debug = true} = {} as any) { //eslint-disable-line max-params
   const prefix = {win32: "wsl"}[process.platform] ?? ""
   if ((prefixed) && (prefix)) {
     args.unshift(command)
@@ -247,7 +247,7 @@ export async function spawn(command, args = [], options = {}, {prefixed = true, 
   }
   if (!stdout)
     throw new Error("`stdout` argument was not provided, use run() instead of spawn() if processing output is not needed")
-  return new Promise((solve, reject) => {
+  return new Promise<void>((solve, reject) => {
     if (debug)
       console.debug(`metrics/command/spawn > ${command} with ${args.join(" ")}`)
     const child = processes.spawn(command, args, {...options, shell: true, timeout})
@@ -435,7 +435,7 @@ export const filters = {
 }
 
 /**Image to base64 */
-export async function imgb64(image, {width, height, fallback = true} = {}) {
+export async function imgb64(image, {width, height, fallback = true} = {} as any) {
   //Ignore already encoded-base 64
   if ((typeof image === "string") && (image.startsWith("data:image/png;base64")))
     return image
@@ -444,12 +444,12 @@ export async function imgb64(image, {width, height, fallback = true} = {}) {
     return fallback ? "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mOcOnfpfwAGfgLYttYINwAAAABJRU5ErkJggg==" : null
   //SVG image
   if ((typeof image === "string") && (image.endsWith(".svg")))
-    return `data:image/svg+xml;base64,${Buffer.from(await fetch(image).then(response => response.arrayBuffer())).toString("base64")}`
+    return `data:image/svg+xml;base64,${Buffer.from(await fetch(image).then(response => response.arrayBuffer()) as any).toString("base64")}`
   //Load image
   let ext = "png"
   try {
     if (image.startsWith("http://") || image.startsWith("https://")) {
-      const buffer = Buffer.from(await fetch(image).then(response => response.arrayBuffer()))
+      const buffer = Buffer.from(await fetch(image).then(response => response.arrayBuffer()) as any)
       ext = (await fileTypeFromBuffer(buffer))?.ext ?? ext
       image = sharp(buffer)
     }
@@ -472,9 +472,9 @@ export const svg = {
   /**Render as pdf */
   async pdf(rendered, {paddings = "", style = "", twemojis = false, gemojis = false, octicons = false, rest = null, errors = []} = {}) {
     //Instantiate browser if needed
-    if (!svg.resize.browser) {
-      svg.resize.browser = await puppeteer.launch()
-      console.debug(`metrics/svg/pdf > started ${await svg.resize.browser.version()}`)
+    if (!(svg.resize as any).browser) {
+      (svg.resize as any).browser = await puppeteer.launch()
+      console.debug(`metrics/svg/pdf > started ${await (svg.resize as any).browser.version()}`)
     }
     //Additional transformations
     if (twemojis)
@@ -486,7 +486,7 @@ export const svg = {
     rendered = marked.parse(rendered)
     //Render through browser and print pdf
     console.debug("metrics/svg/pdf > loading svg")
-    const page = await svg.resize.browser.newPage()
+    const page = await (svg.resize as any).browser.newPage()
     page.on("console", ({_text: text}) => console.debug(`metrics/svg/pdf > puppeteer > ${text}`))
     await page.setContent(`<main class="markdown-body">${rendered}</main>`, {waitUntil: puppeteer.events})
     console.debug("metrics/svg/pdf > loaded svg successfully")
@@ -508,9 +508,9 @@ export const svg = {
   /**Render and resize svg */
   async resize(rendered, {paddings, convert, scripts = []}) {
     //Instantiate browser if needed
-    if (!svg.resize.browser) {
-      svg.resize.browser = await puppeteer.launch()
-      console.debug(`metrics/svg/resize > started ${await svg.resize.browser.version()}`)
+    if (!(svg.resize as any).browser) {
+      (svg.resize as any).browser = await puppeteer.launch()
+      console.debug(`metrics/svg/resize > started ${await (svg.resize as any).browser.version()}`)
     }
     //Format padding
     const padding = {width: 1, height: 1, absolute: {width: 0, height: 0}}
@@ -528,7 +528,7 @@ export const svg = {
     console.debug(`metrics/svg/resize > padding width*${padding.width}+${padding.absolute.width}, height*${padding.height}+${padding.absolute.height}`)
     //Render through browser and resize height
     console.debug("metrics/svg/resize > loading svg")
-    const page = await svg.resize.browser.newPage()
+    const page = await (svg.resize as any).browser.newPage()
     page.setViewport({width: 980, height: 980})
     page
       .on("console", message => console.debug(`metrics/svg/resize > puppeteer > ${message.text()}`))
@@ -569,7 +569,7 @@ export const svg = {
           if (document.querySelector("svg").getAttribute("height") === "auto")
             console.debug('skipped height resizing because it was set to "auto"')
           else
-            document.querySelector("svg").setAttribute("height", height)
+            document.querySelector("svg").setAttribute("height", height as any)
           //Enable animations
           if (animated)
             document.querySelector("svg").classList.remove("no-animations")
@@ -601,12 +601,12 @@ export const svg = {
     if (!rendered)
       return null
     //Instantiate browser if needed
-    if (!svg.resize.browser) {
-      svg.resize.browser = await puppeteer.launch()
-      console.debug(`metrics/svg/hash > started ${await svg.resize.browser.version()}`)
+    if (!(svg.resize as any).browser) {
+      (svg.resize as any).browser = await puppeteer.launch()
+      console.debug(`metrics/svg/hash > started ${await (svg.resize as any).browser.version()}`)
     }
     //Compute hash
-    const page = await svg.resize.browser.newPage()
+    const page = await (svg.resize as any).browser.newPage()
     await page.setContent(rendered, {waitUntil: puppeteer.events})
     const data = await page.evaluate(async () => {
       document.querySelector("footer")?.remove()
@@ -641,7 +641,7 @@ export const svg = {
     console.debug("metrics/svg/gemojis > rendering gemojis")
     const emojis = new Map()
     try {
-      for (const [emoji, url] of Object.entries((await rest.emojis.get().catch(() => ({data: {}}))).data).map(([key, value]) => [`:${key}:`, value])) {
+      for (const [emoji, url] of Object.entries(((await rest.emojis.get().catch(() => ({data: {}}))).data as Record<string, any>)).map(([key, value]) => [`:${key}:`, value])) {
         if ((!emojis.has(emoji)) && (new RegExp(emoji, "g").test(rendered)))
           emojis.set(emoji, `<img class="gemoji" src="${await imgb64(url)}" height="16" width="16" alt="" />`)
       }
@@ -660,7 +660,7 @@ export const svg = {
     //Load octicons
     console.debug("metrics/svg/octicons > rendering octicons")
     const icons = new Map()
-    for (const {name, heights, toSVG} of Object.values(octicons)) {
+    for (const {name, heights, toSVG} of Object.values(octicons as Record<string, any>)) {
       for (const size of Object.keys(heights)) {
         const octicon = `:octicon-${name}-${size}:`
         if (new RegExp(`:octicon-${name}(?:-[0-9]+)?:`, "g").test(rendered)) {
@@ -703,7 +703,7 @@ export const svg = {
         console.debug("metrics/svg/optimize/xml > skipped as raw option is enabled")
         return rendered
       }
-      return xmlformat(rendered, {lineSeparator: "\n", collapseContent: true})
+      return (xmlformat as any)(rendered, {lineSeparator: "\n", collapseContent: true})
     },
     /**SVG optimizer */
     async svg(rendered, {raw = false} = {}, experimental = new Set()) {
@@ -716,9 +716,9 @@ export const svg = {
         console.debug("metrics/svg/optimize/svg > this feature require experimental feature flag --optimize-svg")
         return rendered
       }
-      const {error, data: optimized} = await SVGO.optimize(rendered, {
+      const {error, data: optimized} = await (SVGO as any).optimize(rendered, {
         multipass: true,
-        plugins: SVGO.extendDefaultPlugins([
+        plugins: (SVGO as any).extendDefaultPlugins([
           //Additional cleanup
           {name: "cleanupListOfValues"},
           {name: "removeRasterImages"},
@@ -794,6 +794,8 @@ export async function gif({page, width, height, frames, x = 0, y = 0, repeat = t
 
 /**D3 node wrapper (loosely based on https://github.com/d3-node/d3-node)*/
 export class D3node {
+  jsdom: any
+  document: any
   constructor() {
     this.jsdom = new JSDOM()
     this.document = this.jsdom.window.document
@@ -948,7 +950,7 @@ export const Graph = {
     return d3n.svgString()
   },
   /**Pie Graph */
-  pie(data, {colors, width = 480, height = 315} = {}) {
+  pie(data, {colors, width = 480, height = 315} = {} as any) {
     //Generate SVG
     const radius = Math.min(width, height) / 2
     const d3n = new D3node()

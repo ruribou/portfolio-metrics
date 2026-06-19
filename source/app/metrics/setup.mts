@@ -6,11 +6,12 @@ import yaml from "js-yaml"
 import path from "path"
 import url from "url"
 import util from "util"
-import metadata from "./metadata.mjs"
+import metadata from "./metadata.mts"
+import type {Dict} from "./types.mts"
 
 //Templates and plugins
-const Templates = {}
-const Plugins = {}
+const Templates: Dict = {}
+const Plugins: Dict = {}
 
 /**Setup */
 export default async function({log = true, sandbox = false, community = {}, extras = false} = {}) {
@@ -26,7 +27,7 @@ export default async function({log = true, sandbox = false, community = {}, extr
   //Init
   const logger = log ? console.debug : () => null
   logger("metrics/setup > setup")
-  const conf = {
+  const conf: Dict = {
     authenticated: null,
     templates: {},
     queries: {},
@@ -157,8 +158,9 @@ export default async function({log = true, sandbox = false, community = {}, extr
 
     //Cache templates scripts
     Templates[name] = await (async () => {
-      const template = path.join(directory, "template.mjs")
-      const fallback = path.join(__templates, "classic", "template.mjs")
+      const pick = dir => fs.existsSync(path.join(dir, "template.mts")) ? path.join(dir, "template.mts") : path.join(dir, "template.mjs")
+      const template = pick(directory)
+      const fallback = pick(path.join(__templates, "classic"))
       return (await import(url.pathToFileURL(fs.existsSync(template) ? template : fallback).href)).default
     })()
     logger(`metrics/setup > load template [${name}] > success`)
@@ -200,9 +202,9 @@ export default async function({log = true, sandbox = false, community = {}, extr
 
   //Allowed outputs formats
   if ((!conf.settings.outputs) || (!conf.settings.outputs.length))
-    conf.settings.outputs = metadata.inputs.config_output.values
+    conf.settings.outputs = (metadata as any).inputs.config_output.values
   else
-    conf.settings.outputs = conf.settings.outputs.filter(format => metadata.inputs.config_output.values.includes(format))
+    conf.settings.outputs = conf.settings.outputs.filter(format => (metadata as any).inputs.config_output.values.includes(format))
   logger(`metrics/setup > setup > allowed outputs ${JSON.stringify(conf.settings.outputs)}`)
 
   //Store authenticated user
@@ -236,7 +238,8 @@ const load = {
       return
     //Cache plugins scripts
     logger(`metrics/setup > load plugin [${name}]`)
-    Plugins[name] = (await import(url.pathToFileURL(path.join(directory, "index.mjs")).href)).default
+    const __index = fs.existsSync(path.join(directory, "index.mts")) ? "index.mts" : "index.mjs"
+    Plugins[name] = (await import(url.pathToFileURL(path.join(directory, __index)).href)).default
     logger(`metrics/setup > load plugin [${name}] > success`)
     //Register queries
     const __queries = path.join(directory, "queries")

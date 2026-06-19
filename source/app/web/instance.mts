@@ -10,9 +10,10 @@ import cache from "memory-cache"
 import url from "url"
 import util from "util"
 import mocks from "../../../tests/mocks/index.mjs"
-import metrics from "../metrics/index.mjs"
-import presets from "../metrics/presets.mjs"
-import setup from "../metrics/setup.mjs"
+import metrics from "../metrics/index.mts"
+import type {Dict} from "../metrics/types.mts"
+import presets from "../metrics/presets.mts"
+import setup from "../metrics/setup.mts"
 
 /**App */
 export default async function({sandbox = false} = {}) {
@@ -37,7 +38,7 @@ export default async function({sandbox = false} = {}) {
       settings.plugins[plugin].enabled = settings.plugins[plugin].enabled ?? (console.debug(`metrics/app > auto-enabling ${plugin}`), true)
     //Mock plugins tokens if they're undefined
     if (mock) {
-      const tokens = Object.entries(conf.metadata.plugins[plugin].inputs).filter(([key, value]) => (!/^plugin_/.test(key)) && (value.type === "token")).map(([key]) => key)
+      const tokens = Object.entries(conf.metadata.plugins[plugin].inputs).filter(([key, value]: [string, any]) => (!/^plugin_/.test(key)) && (value.type === "token")).map(([key]) => key)
       for (const token of tokens) {
         if ((!settings.plugins[plugin][token]) || (mock === "force")) {
           console.debug(`metrics/app > using mocked token for ${plugin}.${token}`)
@@ -108,9 +109,9 @@ export default async function({sandbox = false} = {}) {
   const metadata = Object.fromEntries(
     Object.entries(conf.metadata.plugins)
       .map(([key, value]) => [key, Object.fromEntries(Object.entries(value).filter(([key]) => ["name", "icon", "category", "web", "supports", "scopes", "deprecated"].includes(key)))])
-      .map(([key, value]) => [key, key === "core" ? {...value, web: Object.fromEntries(Object.entries(value.web).filter(([key]) => /^config[.]/.test(key)).map(([key, value]) => [key.replace(/^config[.]/, ""), value]))} : value]),
+      .map(([key, value]: [string, any]) => [key, key === "core" ? {...value, web: Object.fromEntries(Object.entries(value.web).filter(([key]) => /^config[.]/.test(key)).map(([key, value]) => [key.replace(/^config[.]/, ""), value]))} : value]),
   )
-  const enabled = Object.entries(metadata).filter(([_name, {category}]) => category !== "core").map(([name]) => ({name, category: metadata[name]?.category ?? "community", deprecated: metadata[name]?.deprecated ?? false, enabled: plugins[name]?.enabled ?? false}))
+  const enabled = Object.entries(metadata).filter(([_name, {category}]: [string, any]) => category !== "core").map(([name]) => ({name, category: metadata[name]?.category ?? "community", deprecated: metadata[name]?.deprecated ?? false, enabled: plugins[name]?.enabled ?? false}))
   const templates = Object.entries(Templates).map(([name]) => ({name, enabled: (conf.settings.templates.enabled.length ? conf.settings.templates.enabled.includes(name) : true) ?? false}))
   const actions = {flush: new Map()}
   const requests = {rest: {limit: 0, used: 0, remaining: 0, reset: NaN}, graphql: {limit: 0, used: 0, remaining: 0, reset: NaN}, search: {limit: 0, used: 0, remaining: 0, reset: NaN}}
@@ -239,7 +240,7 @@ export default async function({sandbox = false} = {}) {
         redirect_uri: `${conf.settings.oauth.url}/.oauth/authorize`,
         allow_signup: false,
         scope: scopes,
-      })}`)
+      } as any)}`)
     })
     app.get("/.oauth/authorize", async (req, res) => {
       //Check state
@@ -364,7 +365,7 @@ export default async function({sandbox = false} = {}) {
         }
         ;(async () => {
           try {
-            const json = await metrics.insights({login}, {...api, ...uapi(req.headers["x-metrics-session"]), conf, callbacks}, {Plugins, Templates})
+            const json = await (metrics as any).insights({login}, {...api, ...uapi(req.headers["x-metrics-session"]), conf, callbacks}, {Plugins, Templates})
             //Cache
             cache.put(`insights.${login}`, json)
             if ((!debug) && (cached)) {
@@ -377,7 +378,7 @@ export default async function({sandbox = false} = {}) {
           }
         })()
         console.debug(`metrics/app/${login}/insights > accepted request`)
-        return res.status(202).json({processing: true, plugins: Object.keys(metrics.insights.plugins)})
+        return res.status(202).json({processing: true, plugins: Object.keys((metrics as any).insights.plugins)})
       }
       //Internal error
       catch (error) {
@@ -387,9 +388,9 @@ export default async function({sandbox = false} = {}) {
           return res.status(404).send("Not found: unknown user or organization")
         }
         //GitHub failed request
-        if ((error instanceof Error) && (/this may be the result of a timeout, or it could be a GitHub bug/i.test(error.errors?.[0]?.message))) {
+        if ((error instanceof Error) && (/this may be the result of a timeout, or it could be a GitHub bug/i.test((error as any).errors?.[0]?.message))) {
           console.debug(`metrics/app/${login} > 502 (bad gateway from GitHub)`)
-          const request = encodeURIComponent(error.errors[0].message.match(/`(?<request>[\w:]+)`/)?.groups?.request ?? "").replace(/%3A/g, ":")
+          const request = encodeURIComponent((error as any).errors[0].message.match(/`(?<request>[\w:]+)`/)?.groups?.request ?? "").replace(/%3A/g, ":")
           return res.status(500).send(`Internal Server Error: failed to execute request ${request} (this may be the result of a timeout, or it could be a GitHub bug)`)
         }
         //General error
@@ -518,9 +519,9 @@ export default async function({sandbox = false} = {}) {
           return res.status(406).send("Not Acceptable: unsupported output format or account type for specified parameters")
         }
         //GitHub failed request
-        if ((error instanceof Error) && (/this may be the result of a timeout, or it could be a GitHub bug/i.test(error.errors?.[0]?.message))) {
+        if ((error instanceof Error) && (/this may be the result of a timeout, or it could be a GitHub bug/i.test((error as any).errors?.[0]?.message))) {
           console.debug(`metrics/app/${login} > 502 (bad gateway from GitHub)`)
-          const request = encodeURIComponent(error.errors[0].message.match(/`(?<request>[\w:]+)`/)?.groups?.request ?? "").replace(/%3A/g, ":")
+          const request = encodeURIComponent((error as any).errors[0].message.match(/`(?<request>[\w:]+)`/)?.groups?.request ?? "").replace(/%3A/g, ":")
           return res.status(500).send(`Internal Server Error: failed to execute request ${request} (this may be the result of a timeout, or it could be a GitHub bug)`)
         }
         //General error

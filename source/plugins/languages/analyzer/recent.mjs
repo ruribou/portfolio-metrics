@@ -1,6 +1,6 @@
 //Imports
 import linguist from "linguist-js"
-import { filters } from "../../../app/metrics/utils.mjs"
+import { filters } from "../../../app/metrics/utils.mts"
 import { Analyzer } from "./analyzer.mjs"
 
 /**Recent analyzer */

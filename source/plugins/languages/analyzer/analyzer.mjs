@@ -3,7 +3,7 @@ import fs from "fs/promises"
 import os from "os"
 import paths from "path"
 import git from "simple-git"
-import { filters } from "../../../app/metrics/utils.mjs"
+import { filters } from "../../../app/metrics/utils.mts"
 import core from "@actions/core"
 
 /**Analyzer */

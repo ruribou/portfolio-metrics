@@ -1,15 +1,15 @@
 //Imports
 import fs from "fs/promises"
 import yaml from "js-yaml"
-import metadata from "./metadata.mjs"
+import metadata from "./metadata.mts"
 
 /**Presets parser */
 export default async function presets(list, {log = true, core = null} = {}) {
   //Init
   const {plugins} = await metadata({log: false})
-  const {"config.presets": files} = plugins.core.inputs({q: {"config.presets": list}, account: "bypass"})
+  const {"config.presets": files} = (plugins as any).core.inputs({q: {"config.presets": list}, account: "bypass"})
   const logger = log ? console.debug : () => null
-  const allowed = Object.entries(metadata.inputs).filter(([_, {type, preset}]) => (type !== "token") && (!/^(?:[Ff]alse|[Oo]ff|[Nn]o|0)$/.test(preset))).map(([key]) => key)
+  const allowed = Object.entries((metadata as any).inputs).filter(([_, {type, preset}]: [string, any]) => (type !== "token") && (!/^(?:[Ff]alse|[Oo]ff|[Nn]o|0)$/.test(preset))).map(([key]) => key)
   const env = core ? "action" : "web"
   const options = {}
 
@@ -47,7 +47,7 @@ export default async function presets(list, {log = true, core = null} = {}) {
               continue
             }
             if (env === "web")
-              key = metadata.to.query(key)
+              key = (metadata as any).to.query(key)
             if (key in options)
               logger(`metrics/presets > ${key} was already specified by another preset, overwriting`)
             options[key] = value

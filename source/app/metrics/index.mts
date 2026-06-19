@@ -1,7 +1,8 @@
 //Imports
 import ejs from "ejs"
 import util from "util"
-import * as utils from "./utils.mjs"
+import * as utils from "./utils.mts"
+import type {Dict, Imports} from "./types.mts"
 
 //Setup
 export default async function metrics({login, q}, {graphql, rest, plugins, conf, die = false, verify = false, convert = null, callbacks = null, warnings = []}, {Plugins, Templates}) {
@@ -24,7 +25,7 @@ export default async function metrics({login, q}, {graphql, rest, plugins, conf,
     //Initialization
     const pending = []
     const {queries} = conf
-    const imports = {
+    const imports: Imports = {
       plugins: Plugins,
       templates: Templates,
       metadata: conf.metadata,
@@ -33,14 +34,14 @@ export default async function metrics({login, q}, {graphql, rest, plugins, conf,
       ...(/markdown/.test(convert)
         ? {
           imgb64(url, options) {
-            return options?.force ? utils.imgb64(...arguments) : url
+            return options?.force ? (utils.imgb64 as any)(...arguments) : url
           },
         }
         : null),
     }
     const {"debug.flags": dflags, "experimental.features": _experimental, "config.order": _partials} = imports.metadata.plugins.core.inputs({account: "bypass", q})
     const extras = {css: imports.metadata.plugins.core.extras("extras_css", {...conf.settings, error: false}) ? q["extras.css"] ?? "" : "", js: imports.metadata.plugins.core.extras("extras_js", {...conf.settings, error: false}) ? q["extras.js"] ?? "" : ""}
-    const data = {q, animated: true, large: false, base: {}, config: {}, errors: [], warnings, plugins: {}, computed: {}, extras, postscripts: []}
+    const data: Dict = {q, animated: true, large: false, base: {}, config: {}, errors: [], warnings, plugins: {}, computed: {}, extras, postscripts: []}
     const experimental = new Set(_experimental)
     if (conf.settings["debug.headless"]) {
       imports.puppeteer.headless = false
@@ -63,7 +64,7 @@ export default async function metrics({login, q}, {graphql, rest, plugins, conf,
 
     //Metrics insights
     if (convert === "insights")
-      return metrics.insights.output({login, imports, conf}, {graphql, rest, Plugins, Templates})
+      return (metrics as any).insights.output({login, imports, conf}, {graphql, rest, Plugins, Templates})
 
     //Partial parts
     {
@@ -94,14 +95,14 @@ export default async function metrics({login, q}, {graphql, rest, plugins, conf,
     if (convert === "json") {
       console.debug(`metrics/compute/${login} > json output`)
       const cache = new WeakSet()
-      const rendered = JSON.parse(JSON.stringify(data, (key, value) => {
+      const rendered = JSON.parse(JSON.stringify(data, (key, value: any) => {
         if ((value instanceof Set) || (Array.isArray(value)))
           return [...value]
         if (value instanceof Map)
           return Object.fromEntries(value)
         if ((typeof value === "object") && (value)) {
           if (cache.has(value))
-            return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, cache.has(v) ? "[Circular]" : v]))
+            return Object.fromEntries(Object.entries(value as any).map(([k, v]) => [k, cache.has(v as object) ? "[Circular]" : v]))
           cache.add(value)
         }
         return value
@@ -129,7 +130,7 @@ export default async function metrics({login, q}, {graphql, rest, plugins, conf,
       }
       //Embed method
       const _q = q
-      const embed = async (name, q = {}) => {
+      const embed = async (name, q: Dict = {}) => {
         //Check arguments
         console.debug(`metrics/compute/${login}/embed > ${name} >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>`)
         if ((!name) || (typeof q !== "object") || (q === null)) {
@@ -242,10 +243,10 @@ export default async function metrics({login, q}, {graphql, rest, plugins, conf,
 }
 
 //Metrics insights
-metrics.insights = async function({login}, {graphql, rest, conf, callbacks}, {Plugins, Templates}) {
-  return metrics({login, q: metrics.insights.q}, {graphql, rest, plugins: metrics.insights.plugins, conf, callbacks, convert: "json"}, {Plugins, Templates})
+;(metrics as any).insights = async function({login}, {graphql, rest, conf, callbacks}, {Plugins, Templates}) {
+  return metrics({login, q: (metrics as any).insights.q}, {graphql, rest, plugins: (metrics as any).insights.plugins, conf, callbacks, convert: "json"}, {Plugins, Templates})
 }
-metrics.insights.q = {
+;(metrics as any).insights.q = {
   template: "classic",
   achievements: true,
   "achievements.threshold": "X",
@@ -275,7 +276,7 @@ metrics.insights.q = {
   calendar: true,
   "calendar.limit": 0,
 }
-metrics.insights.plugins = {
+;(metrics as any).insights.plugins = {
   achievements: {enabled: true},
   isocalendar: {enabled: true},
   languages: {enabled: true, extras: false},
@@ -292,7 +293,7 @@ metrics.insights.plugins = {
 }
 
 //Metrics insights static render
-metrics.insights.output = async function({login, imports, conf}, {graphql, rest, Plugins, Templates}) {
+;(metrics as any).insights.output = async function({login, imports, conf}, {graphql, rest, Plugins, Templates}) {
   //Server
   console.debug(`metrics/compute/${login} > insights`)
   const server = `http://localhost:${conf.settings.port}`
@@ -302,7 +303,7 @@ metrics.insights.output = async function({login, imports, conf}, {graphql, rest,
   const browser = await imports.puppeteer.launch()
   const page = await browser.newPage()
   console.debug(`metrics/compute/${login} > insights > generating data`)
-  const result = await metrics.insights({login}, {graphql, rest, conf}, {Plugins, Templates})
+  const result = await (metrics as any).insights({login}, {graphql, rest, conf}, {Plugins, Templates})
   const json = JSON.stringify(result)
   await page.goto(`${server}/insights/${login}?embed=1&localstorage=1`)
   await page.evaluate(async json => localStorage.setItem("local.metrics", json), json) //eslint-disable-line no-undef

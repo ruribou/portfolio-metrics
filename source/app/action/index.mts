@@ -8,9 +8,10 @@ import paths from "path"
 import sgit from "simple-git"
 import util from "util"
 import mocks from "../../../tests/mocks/index.mjs"
-import metrics from "../metrics/index.mjs"
-import presets from "../metrics/presets.mjs"
-import setup from "../metrics/setup.mjs"
+import metrics from "../metrics/index.mts"
+import type {Dict} from "../metrics/types.mts"
+import presets from "../metrics/presets.mts"
+import setup from "../metrics/setup.mts"
 process.on("unhandledRejection", error => {
   throw error
 })
@@ -20,11 +21,11 @@ let DEBUG = true
 const debugged = []
 
 //Preset
-const preset = {}
+const preset: Dict = {}
 
 //Info logger
 const info = (left, right, {token = false} = {}) =>
-  console.log(`${`${left}`.padEnd(63 + 9 * (/0m$/.test(left)))} │ ${
+  console.log(`${`${left}`.padEnd(63 + 9 * (/0m$/.test(left) ? 1 : 0))} │ ${
     Array.isArray(right)
       ? right.join(", ") || "(none)"
       : right === undefined
@@ -177,8 +178,8 @@ function quit(reason) {
     if (/^github_pat_/.test(token))
       throw new Error("It seems you're trying to use a fine-grained personal access token. These are currently unsupported as GitHub does not support them (yet?) for GraphQL API authentication (see https://docs.github.com/fr/graphql/guides/forming-calls-with-graphql#authenticating-with-graphql for more informations). Use a classic token instead.")
     conf.settings.token = token
-    const api = {}
-    const resources = {}
+    const api: Dict = {}
+    const resources: Dict = {}
     api.graphql = octokit.graphql.defaults({headers: {authorization: `token ${token}`}, baseUrl: _github_api_graphql || undefined})
     info("GitHub GraphQL API", "ok")
     info("GitHub GraphQL API endpoint", api.graphql.baseUrl)
@@ -189,7 +190,7 @@ function quit(reason) {
     info("GitHub REST API endpoint", api.rest.baseUrl)
     //Apply mocking if needed
     if (mocked) {
-      Object.assign(api, await mocks(api))
+      Object.assign(api, await mocks(api as any))
       info("Use mocked API", true)
     }
     //Test token validity and requests count
@@ -256,7 +257,7 @@ function quit(reason) {
       info("Current repository", `${github.context.repo.owner}/${github.context.repo.repo}`)
 
     //Committer
-    const committer = {}
+    const committer: Dict = {}
     if ((!dryrun) && (_action !== "none")) {
       //Compute committer informations
       committer.token = _token || token
@@ -351,10 +352,10 @@ function quit(reason) {
       info("Markdown cache", _markdown_cache)
     if (/insights/.test(convert)) {
       try {
-        await new Promise(async (solve, reject) => {
+        await new Promise<void>(async (solve, reject) => {
           let stdout = ""
           setTimeout(() => reject("Timeout while waiting for Insights webserver"), 5 * 60 * 1000)
-          const web = await processes.spawn("node", ["/metrics/source/app/web/index.mjs"], {env: {...process.env}})
+          const web = await processes.spawn("node", ["--import", "tsx", "/metrics/source/app/web/index.mts"], {env: {...process.env}})
           web.stdout.on("data", data => (console.debug(`web > ${data}`), stdout += data, /Server ready !/.test(stdout) ? solve() : null))
           web.stderr.on("data", data => console.debug(`web > ${data}`))
         })
@@ -440,7 +441,7 @@ function quit(reason) {
     if (_output === "svg") {
       info("Output condition", _output_condition)
       if ((_output_condition === "data-changed") && ((committer.commit) || (committer.pr))) {
-        const {svg} = await import("../metrics/utils.mjs")
+        const {svg} = await import("../metrics/utils.mts")
         let data = ""
         await retry(async () => {
           try {
@@ -529,7 +530,7 @@ function quit(reason) {
 
       //Check changes
       if ((committer.commit) || (committer.pr)) {
-        const git = sgit()
+        const git = (sgit as any)()
         const sha = await git.hashObject(paths.join("/renders", filename))
         info("Current render sha", sha)
         if (committer.sha === sha) {

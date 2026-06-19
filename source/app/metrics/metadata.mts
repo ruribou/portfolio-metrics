@@ -37,7 +37,7 @@ export default async function metadata({log = true, diff = false} = {}) {
   }
 
   //Load plugins metadata
-  let Plugins = {}
+  let Plugins: Record<string, any> = {}
   logger("metrics/metadata > loading plugins metadata")
   for (const name of await fs.promises.readdir(__plugins)) {
     if (!(await fs.promises.lstat(path.join(__plugins, name))).isDirectory())
@@ -49,14 +49,14 @@ export default async function metadata({log = true, diff = false} = {}) {
           if (!(await fs.promises.lstat(path.join(___plugins, name))).isDirectory())
             continue
           logger(`metrics/metadata > loading plugin metadata [community/${name}]`)
-          Plugins[name] = await metadata.plugin({__plugins: ___plugins, __templates, name, logger})
+          Plugins[name] = await (metadata as any).plugin({__plugins: ___plugins, __templates, name, logger})
           Plugins[name].community = true
         }
         continue
       }
       default:
         logger(`metrics/metadata > loading plugin metadata [${name}]`)
-        Plugins[name] = await metadata.plugin({__plugins, __templates, name, logger})
+        Plugins[name] = await (metadata as any).plugin({__plugins, __templates, name, logger})
     }
   }
   //Reorder keys
@@ -64,13 +64,13 @@ export default async function metadata({log = true, diff = false} = {}) {
   Plugins = Object.fromEntries(Object.entries(Plugins).sort(([_an, a], [_bn, b]) => a.category === b.category ? (a.index ?? Infinity) - (b.index ?? Infinity) : categories.indexOf(a.category) - categories.indexOf(b.category)))
   logger(`metrics/metadata > loaded [${Object.keys(Plugins).join(", ")}]`)
   //Load templates metadata
-  let Templates = {}
+  let Templates: Record<string, any> = {}
   logger("metrics/metadata > loading templates metadata")
   for (const name of await fs.promises.readdir(__templates)) {
     if (!(await fs.promises.lstat(path.join(__templates, name))).isDirectory())
       continue
     logger(`metrics/metadata > loading template metadata [${name}]`)
-    Templates[name] = await metadata.template({__templates, name, plugins, logger})
+    Templates[name] = await (metadata as any).template({__templates, name, plugins, logger})
   }
   //Reorder keys
   const {community, ...templates} = Templates
@@ -87,15 +87,15 @@ export default async function metadata({log = true, diff = false} = {}) {
 }
 
 /**Metadata extractor for inputs */
-metadata.inputs = {}
+;(metadata as any).inputs = {}
 
 /**Metadata extractor for templates */
-metadata.plugin = async function({__plugins, __templates, name, logger}) {
+;(metadata as any).plugin = async function({__plugins, __templates, name, logger}) {
   try {
     //Load meta descriptor
     const raw = `${await fs.promises.readFile(path.join(__plugins, name, "metadata.yml"), "utf-8")}`
     const {inputs, ...meta} = yaml.load(raw)
-    Object.assign(metadata.inputs, inputs)
+    Object.assign((metadata as any).inputs, inputs)
 
     //Category
     if (!categories.includes(meta.category))
@@ -132,13 +132,13 @@ metadata.plugin = async function({__plugins, __templates, name, logger}) {
         }
         //Inputs checks
         const result = Object.fromEntries(
-          Object.entries(inputs).map(([key, {type, format, default: defaulted, min, max, values, inherits: _inherits}]) => [
+          Object.entries(inputs as Record<string, any>).map(([key, {type, format, default: defaulted, min, max, values, inherits: _inherits}]) => [
             //Format key
-            metadata.to.query(key, {name}),
+            (metadata as any).to.query(key, {name}),
             //Format value
             (defaulted => {
               //Default value
-              let value = (meta.category !== "core" ? q[`plugin.${metadata.to.query(key)}`] : null) ?? q[metadata.to.query(key)] ?? q[key] ?? defaulted
+              let value = (meta.category !== "core" ? q[`plugin.${(metadata as any).to.query(key)}`] : null) ?? q[(metadata as any).to.query(key)] ?? q[key] ?? defaulted
               //Apply type conversion
               switch (type) {
                 //Booleans
@@ -229,12 +229,12 @@ metadata.plugin = async function({__plugins, __templates, name, logger}) {
         logger(`metrics/inputs > ${name} > ${JSON.stringify(result)}`)
         return result
       }
-      Object.assign(meta.inputs, inputs, Object.fromEntries(Object.entries(inputs).map(([key, value]) => [metadata.to.query(key, {name}), value])))
+      Object.assign(meta.inputs, inputs, Object.fromEntries(Object.entries(inputs as Record<string, any>).map(([key, value]) => [(metadata as any).to.query(key, {name}), value])))
     }
 
     //Enable state handler
     {
-      meta.enabled = function(enabled, {extras = {}, error = true} = {}) {
+      meta.enabled = function(enabled, {extras = {} as any, error = true} = {}) {
         if ((process.env.GITHUB_ACTIONS) && (!enabled))
           console.warn(`::warning::Plugin "${name}" is currently disabled. Add "plugin_${name}: yes" to your workflow to enable it.`)
         if ((error) && (!enabled))
@@ -245,8 +245,8 @@ metadata.plugin = async function({__plugins, __templates, name, logger}) {
 
     //Extra features parser
     {
-      meta.extras = function(input, {extras = {}, error = true} = {}) {
-        const key = metadata.to.yaml(input, {name})
+      meta.extras = function(input, {extras = {} as any, error = true} = {}) {
+        const key = (metadata as any).to.yaml(input, {name})
         try {
           //Required permissions
           const required = inputs[key]?.extras ?? null
@@ -304,7 +304,7 @@ metadata.plugin = async function({__plugins, __templates, name, logger}) {
     //Action metadata
     {
       //Extract comments
-      const comments = {}
+      const comments: Record<string, any> = {}
       raw.split(/(?:\r?\n){2,}/m)
         .map(x => x.trim()).filter(x => x)
         .map(x => x.split("\n").map(y => y.trim()).join("\n"))
@@ -316,13 +316,13 @@ metadata.plugin = async function({__plugins, __templates, name, logger}) {
 
       //Action descriptor
       meta.action = Object.fromEntries(
-        Object.entries(inputs).map(([key, value]) => [
+        Object.entries(inputs as Record<string, any>).map(([key, value]) => [
           key,
           {
             comment: "",
             descriptor: yaml.dump({
               [key]: Object.fromEntries(
-                Object.entries(value).filter(([key]) => ["description", "default", "required"].includes(key)).map(([k, v]) => k === "description" ? [k, v.split("\n")[0]] : k === "default" ? [k, ((/^\$\{\{[\s\S]+\}\}$/.test(v)) || (["config_presets", "config_timezone", "use_prebuilt_image"].includes(key))) ? v : "<default-value>"] : [k, v]),
+                Object.entries(value as Record<string, any>).filter(([key]) => ["description", "default", "required"].includes(key)).map(([k, v]) => k === "description" ? [k, v.split("\n")[0]] : k === "default" ? [k, ((/^\$\{\{[\s\S]+\}\}$/.test(v)) || (["config_presets", "config_timezone", "use_prebuilt_image"].includes(key))) ? v : "<default-value>"] : [k, v]),
               ),
             }, {quotingType: '"', noCompatMode: true}),
           },
@@ -332,7 +332,7 @@ metadata.plugin = async function({__plugins, __templates, name, logger}) {
       //Action inputs
       meta.inputs.action = function({core, preset = {}}) {
         //Build query object from inputs
-        const q = {}
+        const q: Record<string, any> = {}
         for (const key of Object.keys(inputs)) {
           //Parse input
           let value
@@ -359,7 +359,7 @@ metadata.plugin = async function({__plugins, __templates, name, logger}) {
           //From defaults
           else if (unspecified) {
             logger(`metrics/inputs > ${key} has been set by default value`)
-            q[key] = metadata.inputs[key]?.default
+            q[key] = (metadata as any).inputs[key]?.default
           }
           //From user
           else {
@@ -374,9 +374,9 @@ metadata.plugin = async function({__plugins, __templates, name, logger}) {
     //Web metadata
     {
       meta.web = Object.fromEntries(
-        Object.entries(inputs).map(([key, {type, description: text, example, default: defaulted, min = 0, max = 9999, values, extras}]) => [
+        Object.entries(inputs as Record<string, any>).map(([key, {type, description: text, example, default: defaulted, min = 0, max = 9999, values, extras}]) => [
           //Format key
-          metadata.to.query(key),
+          (metadata as any).to.query(key),
           //Value descriptor
           (() => {
             switch (type) {
@@ -408,8 +408,8 @@ metadata.plugin = async function({__plugins, __templates, name, logger}) {
       const demo = meta.examples ? demos({examples: meta.examples}) : raw.match(/(?<demo><table>[\s\S]*?<[/]table>)/)?.groups?.demo?.replace(/<[/]?(?:table|tr)>/g, "")?.trim() ?? "<td></td>"
 
       //Compatibility
-      const templates = {}
-      const compatibility = {}
+      const templates: Record<string, any> = {}
+      const compatibility: Record<string, any> = {}
       for (const template of await fs.promises.readdir(__templates)) {
         if (!(await fs.promises.lstat(path.join(__templates, template))).isDirectory())
           continue
@@ -448,7 +448,7 @@ metadata.plugin = async function({__plugins, __templates, name, logger}) {
         `    <td>${
           [
             ...(meta.scopes ?? []).map(scope => `<code>🔑 ${{public_access: "(scopeless)"}[scope] ?? scope}</code>`),
-            ...Object.entries(inputs).filter(([_, {type}]) => type === "token").map(([token]) => `<code>🗝️ ${token}</code>`),
+            ...Object.entries(inputs as Record<string, any>).filter(([_, {type}]) => type === "token").map(([token]) => `<code>🗝️ ${token}</code>`),
             ...(meta.scopes?.length ? ["read:org", "read:user", "read:packages", "repo"].map(scope => !meta.scopes.includes(scope) ? `<code>${scope} (optional)</code>` : null).filter(v => v) : []),
           ].filter(v => v).join(" ") || "<i>No tokens are required for this plugin</i>"
         }</td>`,
@@ -465,7 +465,7 @@ metadata.plugin = async function({__plugins, __templates, name, logger}) {
         "  <tr>",
         '    <td align="center" nowrap="nowrap">Option</i></td><td align="center" nowrap="nowrap">Description</td>',
         "  </tr>",
-        Object.entries(inputs).map(([option, {description, type, ...o}]) => {
+        Object.entries(inputs as Record<string, any>).map(([option, {description, type, ...o}]) => {
           const cell = []
           if (o.required)
             cell.push("✔️ Required<br>")
@@ -542,7 +542,7 @@ metadata.plugin = async function({__plugins, __templates, name, logger}) {
 }
 
 /**Metadata extractor for templates */
-metadata.template = async function({__templates, name, plugins}) {
+;(metadata as any).template = async function({__templates, name, plugins}) {
   try {
     //Load meta descriptor
     const raw = fs.existsSync(path.join(__templates, name, "metadata.yml")) ? `${await fs.promises.readFile(path.join(__templates, name, "metadata.yml"), "utf-8")}` : ""
@@ -632,7 +632,7 @@ metadata.template = async function({__templates, name, plugins}) {
 }
 
 /**Metadata converters */
-metadata.to = {
+;(metadata as any).to = {
   query(key, {name = null} = {}) {
     key = key.replace(/^plugin_/, "").replace(/_/g, ".")
     return name ? key.replace(new RegExp(`^(${name}.)`, "g"), "") : key
