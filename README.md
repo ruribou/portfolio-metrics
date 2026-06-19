@@ -1,3 +1,40 @@
+# 📊 Metrics（日本語版 README）
+
+GitHub アカウントの統計を **SVG / Markdown / PDF / JSON** として生成し、プロフィール README などどこにでも埋め込めるインフォグラフィック生成ツール [lowlighter/metrics](https://github.com/lowlighter/metrics) の fork です。
+
+> 🌐 先頭に日本語の概要を追加しています。元の英語ドキュメントは [📚 Documentation](#-documentation) 以降を参照してください。
+
+## 📖 これは何？
+
+`metrics` は、コミット数・使用言語・各種アクティビティといった GitHub の統計を、多数のプラグインと 300 以上のオプションで自由にカスタマイズして画像化できるツールです。生成した画像はプロフィール README をはじめ、ブログや Web ページなどどこにでも埋め込めます。
+
+## 🍴 この fork について
+
+本家からの主な変更点は次のとおりです。
+
+- **🐳 軽量な Docker イメージ** — 本家のビルド済みイメージ（`ghcr.io/lowlighter/metrics`）の上に、この fork の `source/` だけを重ねる構成。Chrome・deno・ruby などを含むフルビルドを回避し、数秒でビルドが完了します。
+- **📦 ビルド済みイメージの自動公開** — `main` への push 時に、この fork の GitHub Container Registry（`ghcr.io/ruribou/portfolio-metrics`）へイメージを公開します。Action 実行時はこのビルド済みイメージを優先的に pull するため、毎回のビルドが不要で高速です。
+- **🛠️ 不具合の修正** — 廃止された GitHub Projects (classic) や、空の PushEvents が返るケースでも落ちないよう `achievements` / `habits` プラグインを修正しています。
+- **⚙️ CI の整理** — fork では通過できない upstream 専用ワークフローを削除しています。
+
+## 🚀 使い方
+
+基本的な使い方は本家と同じです。プロフィール用リポジトリで GitHub Action として利用するのが、最も機能が揃った方法です。
+
+```yaml
+- uses: ruribou/portfolio-metrics@main
+  with:
+    token: ${{ secrets.METRICS_TOKEN }}
+    user: ruribou
+    # 必要なプラグイン・オプションを指定
+```
+
+> 💡 `use_prebuilt_image`（既定で有効）により、fork の GHCR に公開されたビルド済みイメージを pull します。pull に失敗した場合のみローカルでビルドします。
+
+詳細なセットアップ手順・テンプレート・プラグイン一覧は、以下の英語ドキュメント（[🦮 Setup](#-setup) / [🖼️ Templates](#️-templates) / [🧩 Plugins](#-plugins)）を参照してください。
+
+---
+
 # 📊 Metrics [<img src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=280144&theme=dark" alt="" align="right" width="190" height="41">](https://www.producthunt.com/posts/github-metrics?utm_source=badge-featured&utm_medium=badge&utm_source=badge-github-metrics)
 
 [![Continuous integration](https://github.com/lowlighter/metrics/actions/workflows/ci.yml/badge.svg)](https://github.com/lowlighter/metrics/actions/workflows/ci.yml)
