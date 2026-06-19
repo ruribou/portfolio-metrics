@@ -7,7 +7,7 @@ export default async function ({login, q, imports, data, account}, {enabled = fa
     if (!q.stackoverflow || !imports.metadata.plugins.stackoverflow.enabled(enabled, {extras})) return null
 
     //Load inputs
-    let {sections, user, limit, lines, "lines.snippet": codelines} = imports.metadata.plugins.stackoverflow.inputs({data, account, q})
+    const {sections, user, limit, lines, "lines.snippet": codelines} = imports.metadata.plugins.stackoverflow.inputs({data, account, q})
     if (!user) throw {error: {message: "Stack Overflow user id is not set"}}
 
     //Initialization

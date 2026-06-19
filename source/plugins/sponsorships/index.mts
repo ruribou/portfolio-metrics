@@ -7,7 +7,7 @@ export default async function ({login, q, imports, data, graphql, queries, accou
     if (!q.sponsorships || !imports.metadata.plugins.sponsorships.enabled(enabled, {extras})) return null
 
     //Load inputs
-    let {sections, size} = await imports.metadata.plugins.sponsorships.inputs({data, account, q})
+    const {sections, size} = await imports.metadata.plugins.sponsorships.inputs({data, account, q})
 
     //Query description and goal
     let amount = NaN,

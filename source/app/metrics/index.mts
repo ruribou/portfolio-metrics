@@ -132,7 +132,7 @@ export default async function metrics({login, q}, {graphql, rest, plugins, conf,
         }
         console.debug(`metrics/compute/${login} > embed called with`)
         console.debug(q)
-        let {base} = q
+        const {base} = q
         q = {..._q, ...Object.fromEntries(Object.keys(Plugins).map(key => [key, false])), ...Object.fromEntries(conf.settings.plugins.base.parts.map(part => [`base.${part}`, false])), template: q.repo ? "repository" : "classic", ...q}
         //Translate action syntax to web syntax
         let parts = []
@@ -288,7 +288,7 @@ export default async function metrics({login, q}, {graphql, rest, plugins, conf,
   const result = await (metrics as any).insights({login}, {graphql, rest, conf}, {Plugins, Templates})
   const json = JSON.stringify(result)
   await page.goto(`${server}/insights/${login}?embed=1&localstorage=1`)
-  await page.evaluate(async json => localStorage.setItem("local.metrics", json), json) //eslint-disable-line no-undef
+  await page.evaluate(async json => localStorage.setItem("local.metrics", json), json)
   await page.goto(`${server}/insights/${login}?embed=1&localstorage=1`)
   await page.waitForSelector(".container .user", {timeout: 10 * 60 * 1000})
 

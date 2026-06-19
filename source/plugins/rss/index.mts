@@ -10,11 +10,11 @@ export default async function ({login, q, imports, data, account}, {enabled = fa
     if (!q.rss || !imports.metadata.plugins.rss.enabled(enabled, {extras})) return null
 
     //Load inputs
-    let {source, limit} = imports.metadata.plugins.rss.inputs({data, account, q})
+    const {source, limit} = imports.metadata.plugins.rss.inputs({data, account, q})
     if (!source) throw {error: {message: "RSS feed URL is not set"}}
 
     //Load rss feed
-    const {title, description, link, items} = await new rss().parseURL(source) //eslint-disable-line new-cap
+    const {title, description, link, items} = await new rss().parseURL(source)
     const feed = items.map(({title, link, isoDate: date}) => ({title, link, date: new Date(date)}))
 
     //Limit feed

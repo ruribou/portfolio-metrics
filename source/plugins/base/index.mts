@@ -187,7 +187,7 @@ export default async function ({login, graphql, rest, data, q, queries, imports,
         console.debug(`metrics/compute/${login}/base > failed to patch packages count, maybe read:packages scope was not provided`)
       }
       //Shared options
-      let {"repositories.skipped": skipped, "users.ignored": ignored, "commits.authoring": authoring} = imports.metadata.plugins.base.inputs({data, q, account: "bypass"})
+      const {"repositories.skipped": skipped, "users.ignored": ignored, "commits.authoring": authoring} = imports.metadata.plugins.base.inputs({data, q, account: "bypass"})
       data.shared = {"repositories.skipped": skipped, "users.ignored": ignored, "commits.authoring": authoring, "repositories.batch": _batch}
       console.debug(`metrics/compute/${login}/base > shared options > ${JSON.stringify(data.shared)}`)
       //Success

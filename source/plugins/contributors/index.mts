@@ -7,7 +7,7 @@ export default async function ({login, q, imports, data, rest, graphql, queries,
     if (!q.contributors || !imports.metadata.plugins.contributors.enabled(enabled, {extras})) return null
 
     //Load inputs
-    let {head, base, ignored, contributions, sections, categories} = imports.metadata.plugins.contributors.inputs({data, account, q})
+    const {head, base, ignored, contributions, sections, categories} = imports.metadata.plugins.contributors.inputs({data, account, q})
     const repo = {owner: data.repo.owner.login, repo: data.repo.name}
     ignored.push(...data.shared["users.ignored"])
 

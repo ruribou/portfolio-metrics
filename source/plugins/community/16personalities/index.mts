@@ -7,7 +7,7 @@ export default async function ({login, q, imports, data, account}, {enabled = fa
     if (!q["16personalities"] || !imports.metadata.plugins["16personalities"].enabled(enabled, {extras})) return null
 
     //Load inputs
-    let {url, sections, scores} = imports.metadata.plugins["16personalities"].inputs({data, account, q})
+    const {url, sections, scores} = imports.metadata.plugins["16personalities"].inputs({data, account, q})
     if (!url) throw {error: {message: "URL is not set"}}
 
     //Start puppeteer and navigate to page
@@ -20,7 +20,7 @@ export default async function ({login, q, imports, data, account}, {enabled = fa
 
     //Fetch raw data
     const raw = await page.evaluate(() => ({
-      color: getComputedStyle(document.querySelector(".card__bg")).backgroundColor, //eslint-disable-line no-undef
+      color: getComputedStyle(document.querySelector(".card__bg")).backgroundColor,
       type: document.querySelector(".type__code").innerText,
       personality: [...document.querySelectorAll(".personality-cards .sp-personality-card")].map(card => ({
         category: card.querySelector(".card__title").innerText,

@@ -7,7 +7,7 @@ export default async function ({login, q, imports, data, graphql, queries, accou
     if (!q.introduction || !imports.metadata.plugins.introduction.enabled(enabled, {extras})) return null
 
     //Load inputs
-    let {title} = imports.metadata.plugins.introduction.inputs({data, account, q})
+    const {title} = imports.metadata.plugins.introduction.inputs({data, account, q})
 
     //Context
     let context = {mode: account, login}

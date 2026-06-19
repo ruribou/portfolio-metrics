@@ -10,7 +10,7 @@ export default async function ({login, q, imports, data, computed, graphql, quer
     if (!q.achievements || !imports.metadata.plugins.achievements.enabled(enabled, {extras})) return null
 
     //Load inputs
-    let {threshold, secrets, only, ignored, limit, display} = imports.metadata.plugins.achievements.inputs({data, q, account})
+    const {threshold, secrets, only, ignored, limit, display} = imports.metadata.plugins.achievements.inputs({data, q, account})
 
     //Initialization
     const list = []

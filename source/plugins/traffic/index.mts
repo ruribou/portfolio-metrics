@@ -7,7 +7,7 @@ export default async function ({login, imports, data, rest, q, account}, {enable
     if (!q.traffic || !imports.metadata.plugins.traffic.enabled(enabled, {extras})) return null
 
     //Load inputs
-    let {skipped} = imports.metadata.plugins.traffic.inputs({data, account, q})
+    const {skipped} = imports.metadata.plugins.traffic.inputs({data, account, q})
     skipped.push(...data.shared["repositories.skipped"])
 
     //Repositories

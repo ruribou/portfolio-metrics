@@ -7,7 +7,7 @@ export default async function ({login, q, imports, graphql, queries, data, accou
     if (!q.repositories || !imports.metadata.plugins.repositories.enabled(enabled, {extras})) return null
 
     //Load inputs
-    let {featured, pinned, starred, random, order, affiliations: _affiliations, forks: _forks} = imports.metadata.plugins.repositories.inputs({data, account, q})
+    const {featured, pinned, starred, random, order, affiliations: _affiliations, forks: _forks} = imports.metadata.plugins.repositories.inputs({data, account, q})
     const affiliations = _affiliations?.length ? `ownerAffiliations: [${_affiliations.map(x => x.toLocaleUpperCase()).join(", ")}]` : ""
     const forks = _forks ? "" : "isFork: false"
 

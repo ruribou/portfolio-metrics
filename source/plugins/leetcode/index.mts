@@ -7,7 +7,7 @@ export default async function ({login, q, imports, data, queries, account}, {ena
     if (!q.leetcode || !imports.metadata.plugins.leetcode.enabled(enabled, {extras})) return null
 
     //Load inputs
-    let {user, sections, "limit.skills": _limit_skills, "ignored.skills": _ignored_skills, "limit.recent": _limit_recent} = imports.metadata.plugins.leetcode.inputs({data, account, q})
+    const {user, sections, "limit.skills": _limit_skills, "ignored.skills": _ignored_skills, "limit.recent": _limit_recent} = imports.metadata.plugins.leetcode.inputs({data, account, q})
     const result = {user, sections, languages: [], skills: [], problems: {}, recent: []}
 
     //Languages stats

@@ -7,7 +7,7 @@ export default async function ({login, data, graphql, q, queries, imports, accou
     if (!q.stars || !imports.metadata.plugins.stars.enabled(enabled, {extras})) return null
 
     //Load inputs
-    let {limit} = imports.metadata.plugins.stars.inputs({data, account, q})
+    const {limit} = imports.metadata.plugins.stars.inputs({data, account, q})
 
     //Retrieve user stars from graphql api
     console.debug(`metrics/compute/${login}/plugins > stars > querying api`)

@@ -7,7 +7,7 @@ export default async function ({login, q, imports, data, account}, {token, enabl
     if (!q.steam || !imports.metadata.plugins.steam.enabled(enabled, {extras})) return null
 
     //Load inputs
-    let {user, sections, "games.ignored": _games_ignored, "games.limit": _games_limit, "recent.games.limit": _recent_games_limit, "achievements.limit": _achievements_limit, "playtime.threshold": _playtime_threshold} = imports.metadata.plugins.steam.inputs({data, account, q})
+    const {user, sections, "games.ignored": _games_ignored, "games.limit": _games_limit, "recent.games.limit": _recent_games_limit, "achievements.limit": _achievements_limit, "playtime.threshold": _playtime_threshold} = imports.metadata.plugins.steam.inputs({data, account, q})
 
     const urls = {
       games: {
@@ -25,7 +25,7 @@ export default async function ({login, q, imports, data, account}, {token, enabl
 
     //Fetch owned games
     console.debug(`metrics/compute/${login}/plugins > steam > fetching owned games`)
-    let {
+    const {
       data: {
         response: {game_count: count, games},
       },
@@ -74,7 +74,7 @@ export default async function ({login, q, imports, data, account}, {token, enabl
             const rate = {total: Object.keys(schema).length, achieved: 0}
             try {
               console.debug(`metrics/compute/${login}/plugins > steam > fetching player achievements "${game.name}" (${game.id})`)
-              let {
+              const {
                 data: {
                   playerstats: {achievements: list = []},
                 },
@@ -94,7 +94,7 @@ export default async function ({login, q, imports, data, account}, {token, enabl
     //Fetch player info
     if (sections.includes("player")) {
       console.debug(`metrics/compute/${login}/plugins > steam > fetching profile info`)
-      let {
+      const {
         data: {
           response: {
             players: [info],

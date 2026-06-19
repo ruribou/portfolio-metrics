@@ -7,7 +7,7 @@ export default async function ({login, data, graphql, q, imports, queries, accou
     if (!q.isocalendar || !imports.metadata.plugins.isocalendar.enabled(enabled, {extras})) return null
 
     //Load inputs
-    let {duration} = imports.metadata.plugins.isocalendar.inputs({data, account, q})
+    const {duration} = imports.metadata.plugins.isocalendar.inputs({data, account, q})
 
     //Compute start day
     const now = new Date()

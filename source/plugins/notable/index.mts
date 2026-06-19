@@ -7,7 +7,7 @@ export default async function ({login, q, imports, rest, graphql, data, account,
     if (!q.notable || !imports.metadata.plugins.notable.enabled(enabled, {extras})) return null
 
     //Load inputs
-    let {filter, skipped, repositories, types, from, indepth, self} = imports.metadata.plugins.notable.inputs({data, account, q})
+    const {filter, skipped, repositories, types, from, indepth, self} = imports.metadata.plugins.notable.inputs({data, account, q})
     skipped.push(...data.shared["repositories.skipped"])
 
     //Iterate through contributed repositories

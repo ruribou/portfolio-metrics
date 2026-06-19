@@ -201,7 +201,7 @@ export default async function ({sandbox = false} = {}) {
           throw error
         }
       }
-    } catch {} //eslint-disable-line no-empty
+    } catch {}
     return res.status(200).json(requests)
   })
   app.get("/.hosted", limiter, (req, res) => res.status(200).json(conf.settings.hosted || null))
@@ -295,7 +295,7 @@ export default async function ({sandbox = false} = {}) {
           authenticated.delete(session)
           console.debug(`metrics/app/oauth > deleted session ${session.substring(0, 6)}`)
           return res.redirect("/.oauth")
-        } catch {} //eslint-disable-line no-empty
+        } catch {}
       }
       return res.status(400).send("Bad request: invalid session")
     })

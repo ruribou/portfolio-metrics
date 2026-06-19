@@ -7,7 +7,7 @@ export default async function ({login, data, queries, imports, q, account}, {ena
     if (!q.anilist || !imports.metadata.plugins.anilist.enabled(enabled, {extras})) return null
 
     //Load inputs
-    let {limit, "limit.characters": limit_characters, medias, sections, shuffle, user} = imports.metadata.plugins.anilist.inputs({data, account, q})
+    const {limit, "limit.characters": limit_characters, medias, sections, shuffle, user} = imports.metadata.plugins.anilist.inputs({data, account, q})
 
     //Initialization
     const result = {user: {name: user, stats: null, genres: []}, lists: Object.fromEntries(medias.map(type => [type, {}])), characters: [], sections}

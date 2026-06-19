@@ -57,7 +57,7 @@ export default async function metadata({log = true, diff = false} = {}) {
     }
   }
   //Reorder keys
-  const {base, core, ...plugins} = Plugins //eslint-disable-line no-unused-vars
+  const {base, core, ...plugins} = Plugins
   Plugins = Object.fromEntries(Object.entries(Plugins).sort(([_an, a], [_bn, b]) => (a.category === b.category ? (a.index ?? Infinity) - (b.index ?? Infinity) : categories.indexOf(a.category) - categories.indexOf(b.category))))
   logger(`metrics/metadata > loaded [${Object.keys(Plugins).join(", ")}]`)
   //Load templates metadata

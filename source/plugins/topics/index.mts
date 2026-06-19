@@ -7,7 +7,7 @@ export default async function ({login, data, imports, q, account}, {enabled = fa
     if (!q.topics || !imports.metadata.plugins.topics.enabled(enabled, {extras})) return null
 
     //Load inputs
-    let {sort, mode, limit} = imports.metadata.plugins.topics.inputs({data, account, q})
+    const {sort, mode, limit} = imports.metadata.plugins.topics.inputs({data, account, q})
     const type = {starred: "labels", labels: "labels", mastered: "icons", icons: "icons"}[mode]
     const shuffle = sort === "random"
 

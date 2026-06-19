@@ -7,7 +7,7 @@ export default async function ({login, imports, data, q, account}, {enabled = fa
     if (!q.tweets || !imports.metadata.plugins.tweets.enabled(enabled, {extras})) return null
 
     //Load inputs
-    let {limit, user: username, attachments} = imports.metadata.plugins.tweets.inputs({data, account, q})
+    const {limit, user: username, attachments} = imports.metadata.plugins.tweets.inputs({data, account, q})
 
     //Load user profile
     console.debug(`metrics/compute/${login}/plugins > tweets > loading twitter profile (@${username})`)

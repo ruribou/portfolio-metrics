@@ -95,7 +95,7 @@ export class Analyzer {
       token = core.getInput("token")
     }
 
-    let url = /^https?:\/\//.test(repo) ? repo : `https://${token}@github.com/${repo}`
+    const url = /^https?:\/\//.test(repo) ? repo : `https://${token}@github.com/${repo}`
     try {
       this.debug(`cloning https://github.com/${repo} to ${path}`)
       await fs.rm(path, {recursive: true, force: true})

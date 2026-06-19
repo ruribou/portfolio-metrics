@@ -7,7 +7,7 @@ export default async function ({login, q, data, imports, graphql, queries, accou
     if (!q.calendar || !imports.metadata.plugins.calendar.enabled(enabled, {extras})) return null
 
     //Load inputs
-    let {limit} = imports.metadata.plugins.calendar.inputs({data, account, q})
+    const {limit} = imports.metadata.plugins.calendar.inputs({data, account, q})
 
     //Compute boundaries
     const registration = new Date(data.user.createdAt)

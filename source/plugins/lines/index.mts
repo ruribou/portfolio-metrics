@@ -7,7 +7,7 @@ export default async function ({login, data, imports, rest, q, account}, {enable
     if (!q.lines || !imports.metadata.plugins.lines.enabled(enabled, {extras})) return null
 
     //Load inputs
-    let {skipped, sections, "repositories.limit": _repositories_limit, "history.limit": _history_limit, delay} = imports.metadata.plugins.lines.inputs({data, account, q})
+    const {skipped, sections, "repositories.limit": _repositories_limit, "history.limit": _history_limit, delay} = imports.metadata.plugins.lines.inputs({data, account, q})
     skipped.push(...data.shared["repositories.skipped"])
 
     //Context

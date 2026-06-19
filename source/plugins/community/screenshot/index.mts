@@ -7,7 +7,7 @@ export default async function ({login, q, imports, data, account}, {enabled = fa
     if (!q.screenshot || !imports.metadata.plugins.screenshot.enabled(enabled, {extras})) return null
 
     //Load inputs
-    let {url, selector, title, background, viewport, wait, mode} = imports.metadata.plugins.screenshot.inputs({data, account, q})
+    const {url, selector, title, background, viewport, wait, mode} = imports.metadata.plugins.screenshot.inputs({data, account, q})
     if (!url) throw {error: {message: "URL is not set"}}
 
     //Start puppeteer and navigate to page

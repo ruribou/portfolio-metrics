@@ -466,11 +466,10 @@ function quit(reason) {
         const regex = /(?<match><img class="metrics-cacheable" data-name="(?<name>[\s\S]+?)" src="data:image[/](?<format>(?:svg[+]xml)|jpeg|png);base64,(?<content>[/+=\w]+?)">)/
         let matched = null
         while ((matched = regex.exec(rendered)?.groups)) {
-          //eslint-disable-line no-cond-assign
           await retry(
             async () => {
               const {match, name, format, content} = matched
-              let path = `${_markdown_cache}/${name}.${format.replace(/[+].*$/g, "")}`
+              const path = `${_markdown_cache}/${name}.${format.replace(/[+].*$/g, "")}`
               console.debug(`Processing ${path}`)
               let sha = null
               try {

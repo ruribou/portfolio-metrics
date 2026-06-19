@@ -257,13 +257,13 @@ export default async function ({login, imports, data, q, account}, {enabled = fa
           }
           case "youtube": {
             //Prepare credentials
-            let date = new Date().getTime()
-            let [, cookie] = token
+            const date = new Date().getTime()
+            const [, cookie] = token
               .split("; ")
               .find(part => part.startsWith("SAPISID="))
               .split("=")
-            let sha1 = str => crypto.createHash("sha1").update(str).digest("hex")
-            let SAPISIDHASH = `SAPISIDHASH ${date}_${sha1(`${date} ${cookie} https://music.youtube.com`)}`
+            const sha1 = str => crypto.createHash("sha1").update(str).digest("hex")
+            const SAPISIDHASH = `SAPISIDHASH ${date}_${sha1(`${date} ${cookie} https://music.youtube.com`)}`
             //API call and parse tracklist
             try {
               //Request access token
@@ -297,10 +297,10 @@ export default async function ({login, imports, data, q, account}, {enabled = fa
               //Retrieve tracks
               console.debug(`metrics/compute/${login}/plugins > music > querying youtube api`)
               tracks = []
-              let parsedHistory = get_all_with_key(res.data, "musicResponsiveListItemRenderer")
+              const parsedHistory = get_all_with_key(res.data, "musicResponsiveListItemRenderer")
 
               for (let i = 0; i < parsedHistory.length; i++) {
-                let track = parsedHistory[i]
+                const track = parsedHistory[i]
                 tracks.push({
                   name: track.flexColumns[0].musicResponsiveListItemFlexColumnRenderer.text.runs[0].text,
                   artist: track.flexColumns[1].musicResponsiveListItemFlexColumnRenderer.text.runs[0].text,

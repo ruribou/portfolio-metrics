@@ -7,7 +7,7 @@ export default async function ({login, q, imports, data, graphql, queries, accou
     if (!q.licenses || !imports.metadata.plugins.licenses.enabled(enabled, {extras})) return null
 
     //Load inputs
-    let {setup, ratio, legal} = imports.metadata.plugins.licenses.inputs({data, account, q})
+    const {setup, ratio, legal} = imports.metadata.plugins.licenses.inputs({data, account, q})
 
     //Initialization
     const {

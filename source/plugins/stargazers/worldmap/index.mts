@@ -12,7 +12,7 @@ import {D3node} from "../../../app/metrics/utils.mts"
  */
 export default async function (login, {locations, sample, imports, token}) {
   //Parse geocodes
-  let stars = new Map()
+  const stars = new Map()
   if (token) {
     const cache = new Map()
     const get = new Gmap()

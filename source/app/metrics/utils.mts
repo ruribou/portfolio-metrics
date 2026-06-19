@@ -247,7 +247,6 @@ export async function run(command, options = {}, {prefixed = true, log = true, d
 
 /**Spawn command (use this to execute commands and process output on the fly) */
 export async function spawn(command, args = [], options = {}, {prefixed = true, timeout = 300 * 1000, stdout, debug = true} = {} as any) {
-  //eslint-disable-line max-params
   const prefix = {win32: "wsl"}[process.platform] ?? ""
   if (prefixed && prefix) {
     args.unshift(command)
@@ -310,7 +309,6 @@ export async function markdown(text, {mode = "inline", codelines = Infinity} = {
   }
   //Trim code snippets
   rendered = rendered.replace(/(?<open><code[\s\S]*?>)(?<code>[\s\S]*?)(?<close><\/code>)/g, (m, open, code, close) => {
-    //eslint-disable-line max-params
     const lines = code.trim().split("\n")
     if (lines.length > 1) {
       if (/class=".*language-[\s\S]+?.*"/.test(open)) open = open.replace(/>/g, ` class="language-multiline ${open.match(/class="(?<class>[\s\S]+)"/)?.groups.class}" xml:space="preserve">`)
@@ -514,9 +512,9 @@ export const svg = {
       [1, "height"],
     ]) {
       let operands = paddings?.[i] ?? paddings[0]
-      let {relative} = operands.match(/(?<relative>[+-]?[\d.]+)%$/)?.groups ?? {}
+      const {relative} = operands.match(/(?<relative>[+-]?[\d.]+)%$/)?.groups ?? {}
       operands = operands.replace(relative, "").trim()
-      let {absolute} = operands.match(/^(?<absolute>[+-]?[\d.]+)/)?.groups ?? {}
+      const {absolute} = operands.match(/^(?<absolute>[+-]?[\d.]+)/)?.groups ?? {}
       if (Number.isFinite(Number(absolute))) padding.absolute[dimension] = Number(absolute)
       if (Number.isFinite(Number(relative))) padding[dimension] = 1 + Number(relative / 100)
     }
@@ -539,7 +537,7 @@ export const svg = {
           for (const script of scripts) {
             try {
               console.debug(`metrics/svg/resize > executing ${script}`)
-              await new Function("document", `return (async () => {${script}})()`)(document) //eslint-disable-line no-new-func
+              await new Function("document", `return (async () => {${script}})()`)(document)
               console.debug("metrics/svg/resize > successfully executed user javascript")
             } catch (error) {
               console.debug(`an error occurred while evaluating script: ${error}`)

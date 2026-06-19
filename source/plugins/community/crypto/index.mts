@@ -7,7 +7,7 @@ export default async function ({login, q, imports, data, account}, {enabled = fa
     if (!q.crypto || !imports.metadata.plugins.crypto.enabled(enabled, {extras})) return null
 
     //Load inputs
-    let {id, days, vs_currency, precision} = imports.metadata.plugins.crypto.inputs({data, account, q})
+    const {id, days, vs_currency, precision} = imports.metadata.plugins.crypto.inputs({data, account, q})
     if (!id) throw {error: {message: "Crypto currency id is not set"}}
 
     console.debug(`metrics/compute/${login}/plugins > crypto > querying api for crypto`)
