@@ -1,22 +1,24 @@
-# Fork CI: type-check the TypeScript (.mts) source. Replaces the upstream
-# build/test/analyze pipeline, whose Docker-based `npm run test-metrics` ran
-# ~200 sequential Puppeteer renders and hit the 6h job timeout, and whose
-# CodeQL step lacked permissions in a fork. Runtime is verified separately by
-# build-docker.yml (it builds the image this fork ships).
+# Fork CI for TypeScript development: format, lint, and type-check the .mts
+# sources on every push and on PRs to main. It's a public repo, so each check
+# runs as its own job for clear, independent signal.
+#
+# The upstream Docker render test (~200 sequential Puppeteer renders, 6h job
+# timeout) and CodeQL are intentionally NOT here. The runtime image is built and
+# verified separately by build-docker.yml.
 name: CI
 
 on:
-  # Type-check every working branch on push (not just main), and every PR to main.
+  # Check every working branch on push (not just main), and every PR to main.
   push:
     branches:
-      - '**'
+      - "**"
   pull_request:
-    branches: [ main ]
+    branches: [main]
   workflow_dispatch:
 
 jobs:
   typecheck:
-    name: Typecheck
+    name: Type-check (tsc)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -25,10 +27,47 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version: 26
+          cache: npm
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --legacy-peer-deps
         env:
-          # tsc only needs the dependency type definitions, not a real browser.
+          # The static checks don't need a real browser.
           PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: "true"
-      - name: Type-check (tsc --noEmit)
+      - name: Type-check
         run: npm run typecheck
+
+  lint:
+    name: Lint (eslint)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+      - name: Setup NodeJS
+        uses: actions/setup-node@v6
+        with:
+          node-version: 26
+          cache: npm
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+        env:
+          PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: "true"
+      - name: Lint
+        run: npm run lint
+
+  format:
+    name: Format (prettier)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+      - name: Setup NodeJS
+        uses: actions/setup-node@v6
+        with:
+          node-version: 26
+          cache: npm
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+        env:
+          PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: "true"
+      - name: Check formatting
+        run: npm run format:check
