@@ -39,8 +39,8 @@ export default async function({list, login, data, computed, imports, graphql, qu
 
   //Managers
   {
-    // Projects (classic) was sunset by GitHub; the projects field is no longer
-    // queried (it hard-errors), so this achievement stays at 0 and won't unlock.
+    //Projects (classic) was sunset by GitHub; the projects field is no longer
+    //queried (it hard-errors), so this achievement stays at 0 and won't unlock.
     const value = organization.projects?.totalCount ?? 0
     const unlock = organization.projects?.nodes?.shift()
 
