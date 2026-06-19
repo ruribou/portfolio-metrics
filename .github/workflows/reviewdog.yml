@@ -1,0 +1,43 @@
+# Surface ESLint warnings inline on pull requests via reviewdog.
+#
+# The `lint` job in test.yml fails only on ESLint *errors* (exit code), so the
+# repo's many `prefer-const` / unused-var *warnings* never show up in the diff.
+# reviewdog annotates those warnings on the changed lines of each PR so they are
+# visible and fixable, without failing CI (fail_on_error: false).
+name: reviewdog
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  eslint:
+    name: reviewdog (eslint)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+      - name: Setup NodeJS
+        uses: actions/setup-node@v6
+        with:
+          node-version: 26
+          cache: npm
+      # Install so reviewdog runs the repo's own ESLint + typescript-eslint
+      # plugins / flat config, not a bare global ESLint.
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+        env:
+          PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: "true"
+      - name: Run eslint with reviewdog
+        uses: reviewdog/action-eslint@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          reporter: github-pr-review
+          level: warning
+          # Only annotate lines this PR touches, not the whole codebase.
+          filter_mode: added
+          fail_on_error: false
+          eslint_flags: "."
