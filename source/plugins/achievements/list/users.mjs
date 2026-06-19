@@ -55,8 +55,10 @@ export default async function({list, login, data, computed, imports, graphql, qu
 
   //Manager
   {
-    const value = user.projects.totalCount
-    const unlock = user.projects.nodes?.shift()
+    // Projects (classic) was sunset by GitHub; the projects field is no longer
+    // queried (it hard-errors), so this achievement stays at 0 and won't unlock.
+    const value = user.projects?.totalCount ?? 0
+    const unlock = user.projects?.nodes?.shift()
 
     list.push({
       title: "Manager",

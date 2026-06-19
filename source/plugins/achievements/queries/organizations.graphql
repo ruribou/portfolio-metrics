@@ -21,9 +21,8 @@ query AchievementsOrganizations {
         }
       }
     }
-    projects(first: 1, orderBy: {field: CREATED_AT, direction: ASC}) {
-      totalCount
-    }
+    # Projects (classic) was sunset by GitHub and now hard-errors the whole
+    # query, so the projects field is removed. See the "Managers" achievement.
     packages(first: 1, orderBy: {direction: ASC, field: CREATED_AT}) {
       totalCount
     }
