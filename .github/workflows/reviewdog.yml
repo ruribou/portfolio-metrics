@@ -39,5 +39,6 @@ jobs:
           level: warning
           # Only annotate lines this PR touches, not the whole codebase.
           filter_mode: added
-          fail_on_error: false
+          # Surface warnings without ever failing the check.
+          fail_level: none
           eslint_flags: "."
