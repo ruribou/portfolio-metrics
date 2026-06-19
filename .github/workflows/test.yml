@@ -2,19 +2,35 @@
 # sources on every push and on PRs to main. It's a public repo, so each check
 # runs as its own job for clear, independent signal.
 #
+# Role: this is the WORK-BRANCH / PR quality gate. It only validates (static
+# checks + a boot smoke) and never publishes anything. Releasing the runtime
+# image is build-docker.yml's job, which runs only on main and version tags.
+#
 # The upstream Docker render test (~200 sequential Puppeteer renders, 6h job
 # timeout) and CodeQL are intentionally NOT here. The runtime image is built and
 # verified separately by build-docker.yml.
 name: CI
 
 on:
-  # Check every working branch on push (not just main), and every PR to main.
+  # Two triggers are both required and serve different audiences:
+  #   - push to any branch: gives internal work branches a signal before a PR
+  #     exists. (push does NOT fire for PRs opened from forks.)
+  #   - pull_request to main: the only way external (fork) contributions get CI.
+  # For an internal branch that already has a PR open, both fire on the same
+  # commit; the concurrency group below collapses them into a single run.
   push:
     branches:
       - "**"
   pull_request:
     branches: [main]
   workflow_dispatch:
+
+# Dedupe the push + pull_request double-run: a push to branch X (ref_name=X) and
+# a PR whose head is X (head_ref=X) share group "ci-X", so cancel-in-progress
+# leaves just one run. Fork PRs (no push event) simply run once.
+concurrency:
+  group: ci-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
 
 jobs:
   typecheck:

@@ -7,11 +7,18 @@
 name: reviewdog
 
 on:
+  # Scoped to PRs targeting main, matching the CI quality gate in test.yml.
   pull_request:
+    branches: [main]
 
 permissions:
   contents: read
   pull-requests: write
+
+# A new push to the PR supersedes the previous annotation run.
+concurrency:
+  group: reviewdog-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 
 jobs:
   eslint:
