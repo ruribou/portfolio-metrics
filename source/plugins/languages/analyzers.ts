@@ -1,8 +1,8 @@
 // @ts-nocheck -- TODO(ts): remove and type this plugin (staged migration)
 //Imports
-import {cli} from "./analyzer/cli.mts"
-import {IndepthAnalyzer} from "./analyzer/indepth.mts"
-import {RecentAnalyzer} from "./analyzer/recent.mts"
+import {cli} from "./analyzer/cli.ts"
+import {IndepthAnalyzer} from "./analyzer/indepth.ts"
+import {RecentAnalyzer} from "./analyzer/recent.ts"
 
 /**Indepth analyzer */
 export async function indepth({login, data, imports, rest, context, repositories}, {skipped, categories, timeout}) {
@@ -15,7 +15,7 @@ export async function recent({login, data, imports, rest, context, account}, {sk
 }
 
 //import.meta.main
-if (/languages.analyzers.mjs$/.test(process.argv[1])) {
+if (/languages.analyzers.ts$/.test(process.argv[1])) {
   ;(async () => {
     console.log(await cli())
     process.exit(0)

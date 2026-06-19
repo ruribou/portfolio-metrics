@@ -1,7 +1,7 @@
 //Imports
 import fs from "fs/promises"
 import yaml from "js-yaml"
-import metadata from "./metadata.mts"
+import metadata from "./metadata.ts"
 
 /**Presets parser */
 export default async function presets(list, {log = true, core = null} = {}) {

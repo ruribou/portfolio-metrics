@@ -1,6 +1,6 @@
 // @ts-nocheck -- TODO(ts): remove and type this plugin (staged migration)
 //Imports
-import {indepth as indepth_analyzer, recent as recent_analyzer} from "./analyzers.mts"
+import {indepth as indepth_analyzer, recent as recent_analyzer} from "./analyzers.ts"
 
 //Setup
 export default async function ({login, data, imports, q, rest, account}, {enabled = false, extras = false} = {}) {

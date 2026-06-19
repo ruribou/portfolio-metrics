@@ -6,8 +6,8 @@ import yaml from "js-yaml"
 import path from "path"
 import url from "url"
 import util from "util"
-import metadata from "./metadata.mts"
-import type {Dict} from "./types.mts"
+import metadata from "./metadata.ts"
+import type {Dict} from "./types.ts"
 
 //Templates and plugins
 const Templates: Dict = {}
@@ -150,7 +150,7 @@ export default async function ({log = true, sandbox = false, community = {}, ext
 
     //Cache templates scripts
     Templates[name] = await (async () => {
-      const pick = dir => (fs.existsSync(path.join(dir, "template.mts")) ? path.join(dir, "template.mts") : path.join(dir, "template.mjs"))
+      const pick = dir => (fs.existsSync(path.join(dir, "template.ts")) ? path.join(dir, "template.ts") : path.join(dir, "template.mjs"))
       const template = pick(directory)
       const fallback = pick(path.join(__templates, "classic"))
       return (await import(url.pathToFileURL(fs.existsSync(template) ? template : fallback).href)).default
@@ -224,7 +224,7 @@ const load = {
     if (!(await fs.promises.lstat(directory)).isDirectory()) return
     //Cache plugins scripts
     logger(`metrics/setup > load plugin [${name}]`)
-    const __index = fs.existsSync(path.join(directory, "index.mts")) ? "index.mts" : "index.mjs"
+    const __index = fs.existsSync(path.join(directory, "index.ts")) ? "index.ts" : "index.mjs"
     Plugins[name] = (await import(url.pathToFileURL(path.join(directory, __index)).href)).default
     logger(`metrics/setup > load plugin [${name}] > success`)
     //Register queries

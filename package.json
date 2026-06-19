@@ -2,25 +2,26 @@
   "name": "metrics",
   "version": "3.35.0-beta",
   "description": "An infographics generator with 40+ plugins and 300+ options to display stats about your GitHub account and render them as SVG, Markdown, PDF or JSON!",
-  "main": "index.mjs",
+  "main": "source/app/action/index.ts",
+  "type": "module",
   "scripts": {
-    "start": "node --import tsx source/app/web/index.mts",
+    "start": "node --import tsx source/app/web/index.ts",
     "test": "jest --runInBand",
-    "test-contrib": "jest --runInBand ci.test.js --noStackTrace",
-    "test-presets": "jest --runInBand presets.test.js --noStackTrace",
-    "test-metrics": "jest --runInBand metrics.test.js",
+    "test-contrib": "jest --runInBand ci.test.ts --noStackTrace",
+    "test-presets": "jest --runInBand presets.test.ts --noStackTrace",
+    "test-metrics": "jest --runInBand metrics.test.ts",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "format": "prettier --write \"source/**/*.{mts,ts}\" \".github/scripts/**/*.mts\"",
-    "format:check": "prettier --check \"source/**/*.{mts,ts}\" \".github/scripts/**/*.mts\"",
-    "build": "node --import tsx .github/scripts/build.mts",
-    "presets": "node --import tsx .github/scripts/presets_examples.mts",
-    "quickstart": "node --import tsx .github/scripts/quickstart/index.mts",
-    "preview": "node --import tsx .github/scripts/preview.mts",
-    "dev": "nodemon --exec \"node --import tsx\" source/app/web/index.mts -e mts,css,ejs,json",
+    "format": "prettier --write \"source/**/*.ts\" \".github/scripts/**/*.ts\"",
+    "format:check": "prettier --check \"source/**/*.ts\" \".github/scripts/**/*.ts\"",
+    "build": "node --import tsx .github/scripts/build.ts",
+    "presets": "node --import tsx .github/scripts/presets_examples.ts",
+    "quickstart": "node --import tsx .github/scripts/quickstart/index.ts",
+    "preview": "node --import tsx .github/scripts/preview.ts",
+    "dev": "nodemon --exec \"node --import tsx\" source/app/web/index.ts -e ts,css,ejs,json",
     "postinstall": "node node_modules/puppeteer/install.js",
-    "indepth": "node --import tsx source/plugins/languages/analyzers.mts"
+    "indepth": "node --import tsx source/plugins/languages/analyzers.ts"
   },
   "repository": {
     "type": "git",
@@ -79,6 +80,10 @@
     "eslint": "^10.5.0",
     "eslint-config-prettier": "^10.1.8",
     "globals": "^17.6.0",
+    "@babel/core": "^7.26.0",
+    "@babel/preset-env": "^7.26.0",
+    "@babel/preset-typescript": "^7.26.0",
+    "babel-jest": "^29.7.0",
     "jest": "^29.7.0",
     "prettier": "^3.8.4",
     "typescript": "^6.0.3",
@@ -87,7 +92,11 @@
   "jest": {
     "testEnvironment": "node",
     "testTimeout": 60000,
-    "transform": {}
+    "moduleFileExtensions": ["ts", "js", "json", "node"],
+    "testMatch": ["**/tests/*.test.ts"],
+    "transform": {
+      "^.+\\.ts$": "babel-jest"
+    }
   },
   "optionalDependencies": {
     "@googlemaps/google-maps-services-js": "^3.3.38",

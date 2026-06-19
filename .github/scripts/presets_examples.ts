@@ -33,7 +33,7 @@ web.run = async vars => await fetch(`http://localhost:3000/lowlighter?${new url.
 web.start = async () =>
   new Promise(solve => {
     let stdout = ""
-    web.instance = processes.spawn("node", ["--import", "tsx", "source/app/web/index.mts"], {env: {...process.env, SANDBOX: true}})
+    web.instance = processes.spawn("node", ["--import", "tsx", "source/app/web/index.ts"], {env: {...process.env, SANDBOX: true}})
     web.instance.stdout.on("data", data => ((stdout += data), /Server ready !/.test(stdout) ? solve() : null))
     web.instance.stderr.on("data", data => console.error(`${data}`))
   })

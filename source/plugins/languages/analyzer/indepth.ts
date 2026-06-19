@@ -4,7 +4,7 @@ import fs from "fs/promises"
 import linguist from "linguist-js"
 import os from "os"
 import paths from "path"
-import {Analyzer} from "./analyzer.mts"
+import {Analyzer} from "./analyzer.ts"
 
 /**Indepth analyzer */
 export class IndepthAnalyzer extends Analyzer {

@@ -29,7 +29,7 @@ export default async function({graphql, rest}) {
         await mock({directory: paths.join(directory, entry), mocks: mocks[entry]})
       }
       else {
-        mocks[entry.replace(/[.]mjs$/, "")] = (await import(urls.pathToFileURL(paths.join(directory, entry)).href)).default
+        mocks[entry.replace(/[.]js$/, "")] = (await import(urls.pathToFileURL(paths.join(directory, entry)).href)).default
       }
     }
     return mocks

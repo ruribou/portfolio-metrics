@@ -11,13 +11,16 @@
 # from this base image.
 FROM ghcr.io/lowlighter/metrics:v3.34
 
-# This fork's source is now TypeScript (.mts), run through the tsx loader at
-# runtime (no build step). Drop the upstream .mjs source so stale files can't
-# shadow ours, install the tsx loader into the inherited node_modules, then
-# overlay our source.
-RUN rm -rf /metrics/source \
+# This fork's source is now TypeScript (.ts), run through the tsx loader at
+# runtime (no build step). Drop the upstream .mjs source and test mocks so stale
+# files can't shadow ours, install the tsx loader into the inherited
+# node_modules, then overlay our source. The action entry point statically
+# imports tests/mocks (used only when METRICS_MOCKED), so the renamed .js mocks
+# must be overlaid too or module resolution fails at startup.
+RUN rm -rf /metrics/source /metrics/tests \
   && npm install --no-save --ignore-scripts --prefix /metrics tsx
 COPY source/ /metrics/source/
+COPY tests/ /metrics/tests/
 
 WORKDIR /metrics
-ENTRYPOINT node --import tsx /metrics/source/app/action/index.mts
+ENTRYPOINT node --import tsx /metrics/source/app/action/index.ts

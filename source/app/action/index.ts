@@ -7,11 +7,11 @@ import fs from "fs/promises"
 import paths from "path"
 import sgit from "simple-git"
 import util from "util"
-import mocks from "../../../tests/mocks/index.mjs"
-import metrics from "../metrics/index.mts"
-import type {Dict} from "../metrics/types.mts"
-import presets from "../metrics/presets.mts"
-import setup from "../metrics/setup.mts"
+import mocks from "../../../tests/mocks/index.js"
+import metrics from "../metrics/index.ts"
+import type {Dict} from "../metrics/types.ts"
+import presets from "../metrics/presets.ts"
+import setup from "../metrics/setup.ts"
 process.on("unhandledRejection", error => {
   throw error
 })
@@ -337,7 +337,7 @@ function quit(reason) {
         await new Promise<void>(async (solve, reject) => {
           let stdout = ""
           setTimeout(() => reject("Timeout while waiting for Insights webserver"), 5 * 60 * 1000)
-          const web = await processes.spawn("node", ["--import", "tsx", "/metrics/source/app/web/index.mts"], {env: {...process.env}})
+          const web = await processes.spawn("node", ["--import", "tsx", "/metrics/source/app/web/index.ts"], {env: {...process.env}})
           web.stdout.on("data", data => (console.debug(`web > ${data}`), (stdout += data), /Server ready !/.test(stdout) ? solve() : null))
           web.stderr.on("data", data => console.debug(`web > ${data}`))
         })
@@ -421,7 +421,7 @@ function quit(reason) {
     if (_output === "svg") {
       info("Output condition", _output_condition)
       if (_output_condition === "data-changed" && (committer.commit || committer.pr)) {
-        const {svg} = await import("../metrics/utils.mts")
+        const {svg} = await import("../metrics/utils.ts")
         let data = ""
         await retry(
           async () => {

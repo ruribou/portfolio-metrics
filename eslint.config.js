@@ -1,4 +1,4 @@
-// Flat ESLint config for the TypeScript (.mts) sources.
+// Flat ESLint config for the TypeScript (.ts) sources.
 //
 // Prettier owns formatting (eslint-config-prettier turns the stylistic rules
 // off), so ESLint here is for code quality only. Rules are intentionally
@@ -25,14 +25,14 @@ export default tseslint.config(
   ...tseslint.configs.recommended,
   prettier,
   {
-    files: ["source/**/*.{mts,ts}", ".github/scripts/**/*.mts"],
+    files: ["source/**/*.ts", ".github/scripts/**/*.ts"],
     languageOptions: {
-      ecmaVersion: 2022,
+      ecmaVersion: 2024,
       sourceType: "module",
       globals: {...globals.node, ...globals.browser},
     },
     rules: {
-      // The dynamic engine is typed loosely on purpose (see source/app/metrics/types.mts).
+      // The dynamic engine is typed loosely on purpose (see source/app/metrics/types.ts).
       "@typescript-eslint/no-explicit-any": "off",
       // Plugins/templates/scripts use `// @ts-nocheck` during the staged migration.
       "@typescript-eslint/ban-ts-comment": "off",

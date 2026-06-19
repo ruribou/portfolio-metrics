@@ -9,11 +9,11 @@ import ratelimit from "express-rate-limit"
 import cache from "memory-cache"
 import url from "url"
 import util from "util"
-import mocks from "../../../tests/mocks/index.mjs"
-import metrics from "../metrics/index.mts"
-import type {Dict} from "../metrics/types.mts"
-import presets from "../metrics/presets.mts"
-import setup from "../metrics/setup.mts"
+import mocks from "../../../tests/mocks/index.js"
+import metrics from "../metrics/index.ts"
+import type {Dict} from "../metrics/types.ts"
+import presets from "../metrics/presets.ts"
+import setup from "../metrics/setup.ts"
 
 /**App */
 export default async function ({sandbox = false} = {}) {

@@ -7,7 +7,7 @@ import yaml from "js-yaml"
 import paths from "path"
 import sgit from "simple-git"
 import url from "url"
-import metadata from "../../source/app/metrics/metadata.mts"
+import metadata from "../../source/app/metrics/metadata.ts"
 
 //Mode
 const [mode = "dryrun"] = process.argv.slice(2)

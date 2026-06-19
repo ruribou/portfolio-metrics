@@ -95,7 +95,7 @@ export default async function ({login, graphql, data, imports, q, queries, accou
     //Generating worldmap
     let worldmap = null
     if (_worldmap && imports.metadata.plugins.stargazers.extras("worldmap", {extras})) {
-      const {default: generate} = await import("./worldmap/index.mts")
+      const {default: generate} = await import("./worldmap/index.ts")
       worldmap = await generate(login, {locations, imports, token: _worldmap_token, sample: _worldmap_sample})
     }
 

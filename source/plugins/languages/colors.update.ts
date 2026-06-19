@@ -1,6 +1,6 @@
 // @ts-nocheck -- TODO(ts): remove and type this plugin (staged migration)
 //Regenerate colors.json from the bundled linguist-js language database.
-//Usage: node source/plugins/languages/colors.update.mjs
+//Usage: node source/plugins/languages/colors.update.ts
 import yaml from "js-yaml"
 import fs from "fs/promises"
 import paths from "path"

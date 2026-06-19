@@ -69,8 +69,8 @@ It will create a new directory in `/source/plugins/community` with the following
 * `/source/plugins/community/{plugin-name}`
   * `README.md`
   * `metadata.yml`
-  * `examples.mjs`
-  * `index.mjs`
+  * `examples.ts`
+  * `index.ts`
 
 Plugins are auto-loaded based on their folder existence, so there's no need to register them somewhere.
 
@@ -197,20 +197,20 @@ let {limit, "limit.field":limit_field} = imports.metadata.plugins.myplugin.input
 console.assert(limit === true)
 ```
 
-### 💬 Filling `index.mjs`
+### 💬 Filling `index.ts`
 
 Plugins use [JavaScript modules](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Modules).
 
-The default exported module of `index.mjs` will be auto-loaded when *metrics* start.
+The default exported module of `index.ts` will be auto-loaded when *metrics* start.
 
-Below is a breakdown of basic `index.mjs` content
+Below is a breakdown of basic `index.ts` content
 ```js
 export default async function(
   //Shared inputs
   {
     login, //GitHub username
     q, //Raw user inputs (dot notation without plugin_ prefix, don't use it directly)
-    imports, //Various utilities (axios, puppeteer, fs, etc., see /source/app/metrics/utils.mjs)
+    imports, //Various utilities (axios, puppeteer, fs, etc., see /source/app/metrics/utils.ts)
     data, //Raw data from core/base plugin
     computed, //Computed data from core/base plugin
     rest, //Rest authenticated GitHub octokit
@@ -372,7 +372,7 @@ You're almost done, review the following checklist before submitting a pull requ
   - [x] `scopes` are correctly listed with their associated names on GitHub (leave an empty array if not applicable)
   - [x] `inputs` are correctly filled
 - [x] I have implemented my plugin
-  - [x] `index.mjs` respects the plugins guidelines
+  - [x] `index.ts` respects the plugins guidelines
 - [x] I have tested my plugin locally
   - [x] `tests/mocks` ... have been created
   - [x] `app.placeholder.js` has been updated for preview from web instances

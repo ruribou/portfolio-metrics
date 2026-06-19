@@ -65,7 +65,7 @@ It also means that to access plugins data they must be enabled and configured be
 
 > ⚠️ Although rare, data schemas may change in-between metrics version without any notice (these changes are not documented in release notes). It is advised to use a pinned version or a fork when using this template.
 
-A few properties are aliased in [/source/templates/markdown/template.mjs](/source/templates/markdown/template.mjs) for convenience.
+A few properties are aliased in [/source/templates/markdown/template.ts](/source/templates/markdown/template.ts) for convenience.
 
 Use `config_output: json` to dump all available data for a given configuration. Power users can also directly read [metrics source code](https://github.com/lowlighter/metrics) to know what is exposed.
 

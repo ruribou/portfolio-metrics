@@ -1,6 +1,6 @@
 // @ts-nocheck -- TODO(ts): remove and type this plugin (staged migration)
 //Legacy import
-import {recent as recent_analyzer} from "./../languages/analyzers.mts"
+import {recent as recent_analyzer} from "./../languages/analyzers.ts"
 
 //Setup
 export default async function ({login, data, rest, imports, q, account}, {enabled = false, extras = false, ...defaults} = {}) {
