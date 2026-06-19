@@ -1,0 +1,17 @@
+# Dependencies / build artifacts
+node_modules/
+
+# Vendored Deno sources (not part of the Node/TS app)
+source/plugins/community/splatoon/s3si/
+source/plugins/community/splatoon/token.ts
+
+# EJS scaffold template (contains <%= %>, not valid TS)
+.github/scripts/quickstart/plugin/
+
+# Generated files (owned by `npm run build` codegen, not hand-formatted)
+action.yml
+settings.example.json
+README.md
+source/plugins/README.md
+source/plugins/community/README.md
+source/templates/README.md

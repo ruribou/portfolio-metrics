@@ -11,8 +11,13 @@
 # from this base image.
 FROM ghcr.io/lowlighter/metrics:v3.34
 
-# Overlay this fork's source — the only divergence from upstream.
+# This fork's source is now TypeScript (.mts), run through the tsx loader at
+# runtime (no build step). Drop the upstream .mjs source so stale files can't
+# shadow ours, install the tsx loader into the inherited node_modules, then
+# overlay our source.
+RUN rm -rf /metrics/source \
+  && npm install --no-save --ignore-scripts --prefix /metrics tsx
 COPY source/ /metrics/source/
 
 WORKDIR /metrics
-ENTRYPOINT node /metrics/source/app/action/index.mjs
+ENTRYPOINT node --import tsx /metrics/source/app/action/index.mts

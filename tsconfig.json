@@ -1,0 +1,33 @@
+{
+  "compilerOptions": {
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM"],
+
+    "allowJs": true,
+    "checkJs": false,
+
+    "strict": false,
+    "noImplicitAny": false,
+
+    "noEmit": true,
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "types": ["node"]
+  },
+  "include": [
+    "source/**/*.mts",
+    "source/**/*.ts",
+    ".github/scripts/**/*.mts"
+  ],
+  "exclude": [
+    "node_modules",
+    "source/app/web/statics/**",
+    "source/plugins/community/splatoon/token.ts",
+    "source/plugins/community/splatoon/s3si/**"
+  ]
+}
