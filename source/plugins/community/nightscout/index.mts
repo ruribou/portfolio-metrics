@@ -1,25 +1,19 @@
 // @ts-nocheck -- TODO(ts): remove and type this plugin (staged migration)
 //Setup
-export default async function({q, imports, data, account}, {enabled = false, extras = false} = {}) {
+export default async function ({q, imports, data, account}, {enabled = false, extras = false} = {}) {
   //Plugin execution
   try {
     //Check if plugin is enabled and requirements are met
-    if ((!q.nightscout) || (!imports.metadata.plugins.nightscout.enabled(enabled, {extras})))
-      return null
+    if (!q.nightscout || !imports.metadata.plugins.nightscout.enabled(enabled, {extras})) return null
 
     //Load inputs
     let {url, datapoints, lowalert, highalert, urgentlowalert, urgenthighalert} = imports.metadata.plugins.nightscout.inputs({data, account, q})
 
-    if (!url || url === "https://example.herokuapp.com")
-      throw {error: {message: "Nightscout URL is not set"}}
-    if (url.substring(url.length - 1) !== "/")
-      url += "/"
-    if (url.substring(0, 7) === "http://")
-      url = `https://${url.substring(7)}`
-    if (url.substring(0, 8) !== "https://")
-      url = `https://${url}`
-    if (datapoints <= 0)
-      datapoints = 1
+    if (!url || url === "https://example.herokuapp.com") throw {error: {message: "Nightscout URL is not set"}}
+    if (url.substring(url.length - 1) !== "/") url += "/"
+    if (url.substring(0, 7) === "http://") url = `https://${url.substring(7)}`
+    if (url.substring(0, 8) !== "https://") url = `https://${url}`
+    if (datapoints <= 0) datapoints = 1
     //Get nightscout data from axios
     const resp = await imports.axios.get(`${url}api/v1/entries.json?count=${datapoints}`)
     for (let i = 0; i < resp.data.length; i++) {
@@ -37,8 +31,7 @@ export default async function({q, imports, data, account}, {enabled = false, ext
       if (sgv >= urgenthighalert || sgv <= urgentlowalert) {
         color = "#216e39"
         alertName = sgv >= urgenthighalert ? "Urgent High" : "Urgent Low"
-      }
-      else if (sgv >= highalert || sgv <= lowalert) {
+      } else if (sgv >= highalert || sgv <= lowalert) {
         color = "#30a14e"
         alertName = sgv >= highalert ? "High" : "Low"
       }
@@ -46,16 +39,14 @@ export default async function({q, imports, data, account}, {enabled = false, ext
       resp.data[i].alert = alertName
     }
     return {data: resp.data.reverse()}
-  }
-  //Handle errors
-  catch (error) {
+  } catch (error) {
+    //Handle errors
     throw imports.format.error(error)
   }
 }
 
 function addZero(i) {
-  if (i < 10)
-    i = `0${i}`
+  if (i < 10) i = `0${i}`
 
   return i
 }

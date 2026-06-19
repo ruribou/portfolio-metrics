@@ -14,7 +14,7 @@ const Templates: Dict = {}
 const Plugins: Dict = {}
 
 /**Setup */
-export default async function({log = true, sandbox = false, community = {}, extras = false} = {}) {
+export default async function ({log = true, sandbox = false, community = {}, extras = false} = {}) {
   //Paths
   const __metrics = path.join(path.dirname(url.fileURLToPath(import.meta.url)), "../../..")
   const __statics = path.join(__metrics, "source/app/web/statics")
@@ -46,32 +46,24 @@ export default async function({log = true, sandbox = false, community = {}, extr
     let fd
     try {
       fd = await fs.promises.open(__settings, "r")
-      if (sandbox)
-        logger("metrics/setup > load settings.json > skipped because in sandbox is enabled")
+      if (sandbox) logger("metrics/setup > load settings.json > skipped because in sandbox is enabled")
       else {
         conf.settings = JSON.parse(`${await fs.promises.readFile(fd)}`)
         logger("metrics/setup > load settings.json > success")
       }
-    }
-    catch (error) {
-      if (error?.code === "ENOENT")
-        logger("metrics/setup > load settings.json > (missing)")
-      else
-        logger(`metrics/setup > load settings.json > (error : ${error})`)
-    }
-    finally {
+    } catch (error) {
+      if (error?.code === "ENOENT") logger("metrics/setup > load settings.json > (missing)")
+      else logger(`metrics/setup > load settings.json > (error : ${error})`)
+    } finally {
       await fd?.close()
     }
   }
 
-  if (!conf.settings.templates)
-    conf.settings.templates = {default: "classic", enabled: []}
-  if (!conf.settings.plugins)
-    conf.settings.plugins = {}
+  if (!conf.settings.templates) conf.settings.templates = {default: "classic", enabled: []}
+  if (!conf.settings.plugins) conf.settings.plugins = {}
   conf.settings.community = {...conf.settings.community, ...community}
   conf.settings.plugins.base = {parts: ["header", "activity", "community", "repositories", "metadata"]}
-  if (conf.settings.debug)
-    logger(util.inspect(conf.settings, {depth: Infinity, maxStringLength: 256}))
+  if (conf.settings.debug) logger(util.inspect(conf.settings, {depth: Infinity, maxStringLength: 256}))
 
   //Load package settings
   logger("metrics/setup > load package.json")
@@ -79,12 +71,19 @@ export default async function({log = true, sandbox = false, community = {}, extr
   logger("metrics/setup > load package.json > success")
 
   //Load community templates
-  if ((conf.settings.extras?.features?.includes?.("metrics.setup.community.templates")) || (conf.settings.extras?.features === true) || (conf.settings.extras?.default) || (extras) || (sandbox)) {
-    if ((typeof conf.settings.community.templates === "string") && (conf.settings.community.templates.length)) {
+  if (conf.settings.extras?.features?.includes?.("metrics.setup.community.templates") || conf.settings.extras?.features === true || conf.settings.extras?.default || extras || sandbox) {
+    if (typeof conf.settings.community.templates === "string" && conf.settings.community.templates.length) {
       logger("metrics/setup > parsing community templates list")
-      conf.settings.community.templates = [...new Set([...decodeURIComponent(conf.settings.community.templates).split(",").map(v => v.trim().toLocaleLowerCase()).filter(v => v)])]
+      conf.settings.community.templates = [
+        ...new Set([
+          ...decodeURIComponent(conf.settings.community.templates)
+            .split(",")
+            .map(v => v.trim().toLocaleLowerCase())
+            .filter(v => v),
+        ]),
+      ]
     }
-    if ((Array.isArray(conf.settings.community.templates)) && (conf.settings.community.templates.length)) {
+    if (Array.isArray(conf.settings.community.templates) && conf.settings.community.templates.length) {
       //Clean remote repository
       logger(`metrics/setup > ${conf.settings.community.templates.length} community templates to install`)
       await fs.promises.rm(path.join(__templates, ".community"), {recursive: true, force: true})
@@ -103,8 +102,7 @@ export default async function({log = true, sandbox = false, community = {}, extr
           await fs.promises.rm(path.join(__templates, `@${name}`), {recursive: true, force: true})
           await fs.promises.rename(path.join(__templates, ".community/source/templates", name), path.join(__templates, `@${name}`))
           //JavaScript file
-          if (trust)
-            logger(`metrics/setup > keeping @${name}/template.mjs (unsafe mode is enabled)`)
+          if (trust) logger(`metrics/setup > keeping @${name}/template.mjs (unsafe mode is enabled)`)
           else if (fs.existsSync(path.join(__templates, `@${name}`, "template.mjs"))) {
             logger(`metrics/setup > removing @${name}/template.mjs`)
             await fs.promises.unlink(path.join(__templates, `@${name}`, "template.mjs"))
@@ -114,13 +112,11 @@ export default async function({log = true, sandbox = false, community = {}, extr
               if (fs.existsSync(path.join(__templates, inherit, "template.mjs"))) {
                 logger(`metrics/setup > @${name} extended from ${inherit}`)
                 await fs.promises.copyFile(path.join(__templates, inherit, "template.mjs"), path.join(__templates, `@${name}`, "template.mjs"))
-              }
-              else {
+              } else {
                 logger(`metrics/setup > @${name} could not extends ${inherit} as it does not exist`)
               }
             }
-          }
-          else {
+          } else {
             logger(`metrics/setup > @${name}/template.mjs does not exist`)
           }
 
@@ -128,18 +124,15 @@ export default async function({log = true, sandbox = false, community = {}, extr
           logger(`metrics/setup > clean ${repo}@${branch}`)
           await fs.promises.rm(path.join(__templates, ".community"), {recursive: true, force: true})
           logger(`metrics/setup > loaded community template ${name}`)
-        }
-        catch (error) {
+        } catch (error) {
           logger(`metrics/setup > failed to load community template ${template}`)
           logger(error)
         }
       }
-    }
-    else {
+    } else {
       logger("metrics/setup > no community templates to install")
     }
-  }
-  else {
+  } else {
     logger("metrics/setup > community templates are disabled")
   }
 
@@ -147,8 +140,7 @@ export default async function({log = true, sandbox = false, community = {}, extr
   for (const name of await fs.promises.readdir(__templates)) {
     //Search for templates
     const directory = path.join(__templates, name)
-    if ((!(await fs.promises.lstat(directory)).isDirectory()) || (!fs.existsSync(path.join(directory, "partials/_.json"))))
-      continue
+    if (!(await fs.promises.lstat(directory)).isDirectory() || !fs.existsSync(path.join(directory, "partials/_.json"))) continue
     logger(`metrics/setup > load template [${name}]`)
     //Cache templates files
     const files = ["image.svg", "style.css", "fonts.css"].map(file => path.join(__templates, fs.existsSync(path.join(directory, file)) ? name : "classic", file))
@@ -158,7 +150,7 @@ export default async function({log = true, sandbox = false, community = {}, extr
 
     //Cache templates scripts
     Templates[name] = await (async () => {
-      const pick = dir => fs.existsSync(path.join(dir, "template.mts")) ? path.join(dir, "template.mts") : path.join(dir, "template.mjs")
+      const pick = dir => (fs.existsSync(path.join(dir, "template.mts")) ? path.join(dir, "template.mts") : path.join(dir, "template.mjs"))
       const template = pick(directory)
       const fallback = pick(path.join(__templates, "classic"))
       return (await import(url.pathToFileURL(fs.existsSync(template) ? template : fallback).href)).default
@@ -183,8 +175,7 @@ export default async function({log = true, sandbox = false, community = {}, extr
     switch (name) {
       case "community": {
         const ___plugins = path.join(__plugins, "community")
-        for (const name of await fs.promises.readdir(___plugins))
-          await load.plugin(name, {__plugins: ___plugins, Plugins, conf, logger})
+        for (const name of await fs.promises.readdir(___plugins)) await load.plugin(name, {__plugins: ___plugins, Plugins, conf, logger})
         continue
       }
       default:
@@ -196,24 +187,20 @@ export default async function({log = true, sandbox = false, community = {}, extr
   conf.metadata = await metadata({log})
 
   //Modes
-  if ((!conf.settings.modes) || (!conf.settings.modes.length))
-    conf.settings.modes = ["embed", "insights"]
+  if (!conf.settings.modes || !conf.settings.modes.length) conf.settings.modes = ["embed", "insights"]
   logger(`metrics/setup > setup > enabled modes ${JSON.stringify(conf.settings.modes)}`)
 
   //Allowed outputs formats
-  if ((!conf.settings.outputs) || (!conf.settings.outputs.length))
-    conf.settings.outputs = (metadata as any).inputs.config_output.values
-  else
-    conf.settings.outputs = conf.settings.outputs.filter(format => (metadata as any).inputs.config_output.values.includes(format))
+  if (!conf.settings.outputs || !conf.settings.outputs.length) conf.settings.outputs = (metadata as any).inputs.config_output.values
+  else conf.settings.outputs = conf.settings.outputs.filter(format => (metadata as any).inputs.config_output.values.includes(format))
   logger(`metrics/setup > setup > allowed outputs ${JSON.stringify(conf.settings.outputs)}`)
 
   //Store authenticated user
   if (conf.settings.token) {
     try {
-      conf.authenticated = (await (new OctokitRest.Octokit({auth: conf.settings.token})).users.getAuthenticated()).data.login
+      conf.authenticated = (await new OctokitRest.Octokit({auth: conf.settings.token}).users.getAuthenticated()).data.login
       logger(`metrics/setup > setup > authenticated as ${conf.authenticated}`)
-    }
-    catch (error) {
+    } catch (error) {
       logger(`metrics/setup > setup > could not verify authentication : ${error}`)
     }
   }
@@ -234,8 +221,7 @@ const load = {
   async plugin(name, {__plugins, Plugins, conf, logger}) {
     //Search for plugins
     const directory = path.join(__plugins, name)
-    if (!(await fs.promises.lstat(directory)).isDirectory())
-      return
+    if (!(await fs.promises.lstat(directory)).isDirectory()) return
     //Cache plugins scripts
     logger(`metrics/setup > load plugin [${name}]`)
     const __index = fs.existsSync(path.join(directory, "index.mts")) ? "index.mts" : "index.mjs"
@@ -245,9 +231,8 @@ const load = {
     const __queries = path.join(directory, "queries")
     if (fs.existsSync(__queries)) {
       //Alias for default query
-      const queries = function() {
-        if (!queries[name])
-          throw new ReferenceError(`Default query for ${name} undefined`)
+      const queries = function () {
+        if (!queries[name]) throw new ReferenceError(`Default query for ${name} undefined`)
         return queries[name](...arguments)
       }
       conf.queries[name] = queries
@@ -271,13 +256,13 @@ const load = {
         }
       }
       //Create queries formatters
-      Object.keys(queries).map(query =>
-        queries[query.substring(1)] = (vars = {}) => {
-          let queried = queries[query]
-          for (const [key, value] of Object.entries(vars))
-            queried = queried.replace(new RegExp(`[$]${key}`, "g"), value)
-          return queried
-        }
+      Object.keys(queries).map(
+        query =>
+          (queries[query.substring(1)] = (vars = {}) => {
+            let queried = queries[query]
+            for (const [key, value] of Object.entries(vars)) queried = queried.replace(new RegExp(`[$]${key}`, "g"), value)
+            return queried
+          }),
       )
     }
   },

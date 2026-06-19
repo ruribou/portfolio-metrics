@@ -1,11 +1,10 @@
 // @ts-nocheck -- TODO(ts): remove and type this plugin (staged migration)
 //Setup
-export default async function({login, q, imports, data, rest, graphql, queries, account}, {enabled = false, extras = false} = {}) {
+export default async function ({login, q, imports, data, rest, graphql, queries, account}, {enabled = false, extras = false} = {}) {
   //Plugin execution
   try {
     //Check if plugin is enabled and requirements are met
-    if ((!q.contributors) || (!imports.metadata.plugins.contributors.enabled(enabled, {extras})))
-      return null
+    if (!q.contributors || !imports.metadata.plugins.contributors.enabled(enabled, {extras})) return null
 
     //Load inputs
     let {head, base, ignored, contributions, sections, categories} = imports.metadata.plugins.contributors.inputs({data, account, q})
@@ -22,7 +21,7 @@ export default async function({login, q, imports, data, rest, graphql, queries, 
     //Get commit activity
     console.debug(`metrics/compute/${login}/plugins > contributors > querying api for commits between [${ref.base?.abbreviatedOid ?? null}] and [${ref.head?.abbreviatedOid ?? null}]`)
     const commits = []
-    for (let page = 1;; page++) {
+    for (let page = 1; ; page++) {
       console.debug(`metrics/compute/${login}/plugins > contributors > loading page ${page}`)
       try {
         const {data: loaded} = await rest.repos.listCommits({...repo, per_page: 100, page})
@@ -36,10 +35,8 @@ export default async function({login, q, imports, data, rest, graphql, queries, 
           break
         }
         commits.push(...loaded.filter(commit => commit?.author?.login))
-      }
-      catch (error) {
-        if (/Git Repository is empty/.test(error))
-          break
+      } catch (error) {
+        if (/Git Repository is empty/.test(error)) break
         throw error
       }
     }
@@ -51,13 +48,15 @@ export default async function({login, q, imports, data, rest, graphql, queries, 
 
     //Compute contributors and contributions
     let contributors = {}
-    for (const {author: {login, avatar_url: avatar}, commit: {message = "", author: {email = ""} = {}}} of commits) {
-      if ((!login) || (!imports.filters.text(login, ignored)) || (!imports.filters.text(email, ignored))) {
+    for (const {
+      author: {login, avatar_url: avatar},
+      commit: {message = "", author: {email = ""} = {}},
+    } of commits) {
+      if (!login || !imports.filters.text(login, ignored) || !imports.filters.text(email, ignored)) {
         console.debug(`metrics/compute/${login}/plugins > contributors > ignored contributor "${login}"`)
         continue
       }
-      if (!(login in contributors))
-        contributors[login] = {avatar: await imports.imgb64(avatar), contributions: 1, pr: []}
+      if (!(login in contributors)) contributors[login] = {avatar: await imports.imgb64(avatar), contributions: 1, pr: []}
       else {
         contributors[login].contributions++
         contributors[login].pr.push(...(message.match(/(?<=[(])#\d+(?=[)])/g) ?? []))
@@ -66,12 +65,11 @@ export default async function({login, q, imports, data, rest, graphql, queries, 
     contributors = Object.fromEntries(Object.entries(contributors).sort(([_an, a], [_bn, b]) => b.contributions - a.contributions))
 
     //Filter pull requests
-    for (const contributor of Object.values(contributors))
-      contributor.pr = [...new Set(contributor.pr)]
+    for (const contributor of Object.values(contributors)) contributor.pr = [...new Set(contributor.pr)]
 
     //Contributions categories
     const types = Object.fromEntries([...new Set(Object.keys(categories))].map(type => [type, new Set()]))
-    if ((sections.includes("categories")) && (imports.metadata.plugins.contributors.extras("categories", {extras}))) {
+    if (sections.includes("categories") && imports.metadata.plugins.contributors.extras("categories", {extras})) {
       //Temporary directory
       const repository = `${repo.owner}/${repo.repo}`
       const path = imports.paths.join(imports.os.tmpdir(), `${repository.replace(/[^\w]/g, "_")}`)
@@ -88,15 +86,18 @@ export default async function({login, q, imports, data, rest, graphql, queries, 
         for (const contributor in contributors) {
           //Load edited files by contributor
           const files = []
-          await imports.spawn("git", ["--no-pager", "log", `--author="${contributor}"`, "--regexp-ignore-case", "--no-merges", "--name-only", '--pretty=format:""'], {cwd: path}, {
-            stdout(line) {
-              if (line.trim().length)
-                files.push(line)
+          await imports.spawn(
+            "git",
+            ["--no-pager", "log", `--author="${contributor}"`, "--regexp-ignore-case", "--no-merges", "--name-only", '--pretty=format:""'],
+            {cwd: path},
+            {
+              stdout(line) {
+                if (line.trim().length) files.push(line)
+              },
             },
-          })
+          )
           //Search for contributions type in specified categories
-          filesloop:
-          for (const file of files) {
+          filesloop: for (const file of files) {
             for (const [category, globs] of Object.entries(categories)) {
               for (const glob of [globs].flat(Infinity)) {
                 if (imports.minimatch(file, glob, {nocase: true})) {
@@ -107,12 +108,10 @@ export default async function({login, q, imports, data, rest, graphql, queries, 
             }
           }
         }
-      }
-      catch (error) {
+      } catch (error) {
         console.debug(error)
         console.debug(`metrics/compute/${login}/plugins > contributors > an error occurred while processing ${repository}`)
-      }
-      finally {
+      } finally {
         //Cleaning
         console.debug(`metrics/compute/${login}/plugins > contributors > cleaning temp dir ${path}`)
         await imports.fs.rm(path, {recursive: true, force: true})
@@ -121,9 +120,8 @@ export default async function({login, q, imports, data, rest, graphql, queries, 
 
     //Results
     return {head, base, ref, list: contributors, categories: types, contributions, sections}
-  }
-  //Handle errors
-  catch (error) {
+  } catch (error) {
+    //Handle errors
     throw imports.format.error(error)
   }
 }

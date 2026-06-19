@@ -5,7 +5,7 @@
  */
 
 //Setup
-export default async function({login, q}, {conf, data, rest, graphql, plugins, queries, account, convert, template, callbacks}, {pending, imports}) {
+export default async function ({login, q}, {conf, data, rest, graphql, plugins, queries, account, convert, template, callbacks}, {pending, imports}) {
   //Load inputs
   const {"config.animations": animations, "config.display": display, "config.timezone": _timezone, "config.base64": _base64, "debug.flags": dflags} = imports.metadata.plugins.core.inputs({data, account, q})
   imports.metadata.templates[template].check({q, account, format: convert})
@@ -36,13 +36,11 @@ export default async function({login, q}, {conf, data, rest, graphql, plugins, q
     try {
       timezone.offset = offset - (Number(new Date().toLocaleString("fr", {timeZoneName: "short", timeZone: timezone.name}).match(/UTC[+](?<offset>\d+)/)?.groups?.offset * 60 * 60 * 1000) || 0)
       console.debug(`metrics/compute/${login} > timezone set to ${timezone.name} (${timezone.offset > 0 ? "+" : ""}${Math.round(timezone.offset / (60 * 60 * 1000))} hours)`)
-    }
-    catch {
+    } catch {
       timezone.error = `Failed to use timezone "${timezone.name}"`
       console.debug(`metrics/compute/${login} > failed to use timezone "${timezone.name}"`)
     }
-  }
-  else if (process?.env?.TZ) {
+  } else if (process?.env?.TZ) {
     data.config.timezone = {name: process.env.TZ, offset}
   }
 
@@ -60,36 +58,33 @@ export default async function({login, q}, {conf, data, rest, graphql, plugins, q
 
   //Plugins
   for (const name of Object.keys(imports.plugins)) {
-    if (!q[name])
-      continue
-    pending.push((async () => {
-      try {
-        console.debug(`metrics/compute/${login}/plugins > ${name} > started`)
-        data.plugins[name] = await imports.plugins[name]({login, q, imports, data, computed, rest, graphql, queries, account}, {extras, sandbox: conf.settings?.sandbox ?? false, ...plugins[name]})
-        console.debug(`metrics/compute/${login}/plugins > ${name} > completed`)
-      }
-      catch (error) {
-        console.debug(`metrics/compute/${login}/plugins > ${name} > completed (error)`)
-        data.plugins[name] = error
-      }
-      finally {
-        const result = {name, result: data.plugins[name]}
-        console.debug(imports.util.inspect(result, {depth: Infinity, maxStringLength: 256, getters: true}))
-        await callbacks?.plugin?.(login, name, !data.plugins[name].error, data.plugins[name]).catch(error => console.debug(`metrics/compute/${login}/plugins/callbacks > ${name} > ${error}`))
-        return result
-      }
-    })())
+    if (!q[name]) continue
+    pending.push(
+      (async () => {
+        try {
+          console.debug(`metrics/compute/${login}/plugins > ${name} > started`)
+          data.plugins[name] = await imports.plugins[name]({login, q, imports, data, computed, rest, graphql, queries, account}, {extras, sandbox: conf.settings?.sandbox ?? false, ...plugins[name]})
+          console.debug(`metrics/compute/${login}/plugins > ${name} > completed`)
+        } catch (error) {
+          console.debug(`metrics/compute/${login}/plugins > ${name} > completed (error)`)
+          data.plugins[name] = error
+        } finally {
+          const result = {name, result: data.plugins[name]}
+          console.debug(imports.util.inspect(result, {depth: Infinity, maxStringLength: 256, getters: true}))
+          await callbacks?.plugin?.(login, name, !data.plugins[name].error, data.plugins[name]).catch(error => console.debug(`metrics/compute/${login}/plugins/callbacks > ${name} > ${error}`))
+          return result
+        }
+      })(),
+    )
   }
 
   //Iterate through user's repositories
   for (const repository of data.user.repositories.nodes) {
     //Simple properties with totalCount
-    for (const property of ["watchers", "stargazers", "issues_open", "issues_closed", "pr_open", "pr_closed", "pr_merged", "releases", "deployments", "environments"])
-      computed.repositories[property] += repository[property]?.totalCount ?? 0
+    for (const property of ["watchers", "stargazers", "issues_open", "issues_closed", "pr_open", "pr_closed", "pr_merged", "releases", "deployments", "environments"]) computed.repositories[property] += repository[property]?.totalCount ?? 0
     //Forks
     computed.repositories.forks += repository.forkCount
-    if (repository.isFork)
-      computed.repositories.forked++
+    if (repository.isFork) computed.repositories.forked++
     //License
     if (repository.licenseInfo) {
       computed.licenses.used[repository.licenseInfo.spdxId] = (computed.licenses.used[repository.licenseInfo.spdxId] ?? 0) + 1
@@ -101,7 +96,11 @@ export default async function({login, q}, {conf, data, rest, graphql, plugins, q
   computed.diskUsage = `${imports.format.bytes(data.user.repositories.totalDiskUsage * 1000)}`
 
   //Compute licenses stats
-  computed.licenses.favorite = Object.entries(computed.licenses.used).sort(([_an, a], [_bn, b]) => b - a).slice(0, 1).map(([name, _value]) => name) ?? ""
+  computed.licenses.favorite =
+    Object.entries(computed.licenses.used)
+      .sort(([_an, a], [_bn, b]) => b - a)
+      .slice(0, 1)
+      .map(([name, _value]) => name) ?? ""
 
   //Compute total commits
   computed.commits += data.user.contributionsCollection.totalCommitContributions + data.user.contributionsCollection.restrictedContributionsCount
@@ -116,19 +115,18 @@ export default async function({login, q}, {conf, data, rest, graphql, plugins, q
 
   computed.registered = {years: years + days / 365.25, months}
   computed.registration = years ? `${years} year${imports.s(years)} ago` : months ? `${months} month${imports.s(months)} ago` : `${days} day${imports.s(days)} ago`
-  computed.cakeday = (years >= 1 && months === 0 && days === 0) ? true : false
+  computed.cakeday = years >= 1 && months === 0 && days === 0 ? true : false
 
   //Compute calendar
   computed.calendar = data.user.calendar.contributionCalendar.weeks.flatMap(({contributionDays}) => contributionDays).slice(-14)
 
   //Avatar (base64)
-  computed.avatar = await avatar || "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
+  computed.avatar = (await avatar) || "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
 
   //Token scopes
   try {
-    computed.token.scopes = conf.settings.notoken ? [] : (await rest.request("HEAD /")).headers["x-oauth-scopes"]?.split(", ") ?? []
-  }
-  catch (error) {
+    computed.token.scopes = conf.settings.notoken ? [] : ((await rest.request("HEAD /")).headers["x-oauth-scopes"]?.split(", ") ?? [])
+  } catch (error) {
     console.debug(error)
     computed.token.scopes = []
   }
@@ -145,7 +143,7 @@ export default async function({login, q}, {conf, data, rest, graphql, plugins, q
     console.debug(`metrics/compute/${login} > applying dflag --cakeday`)
     computed.cakeday = true
   }
-  if ((dflags.includes("--halloween")) || (dflags.includes("--winter"))) {
+  if (dflags.includes("--halloween") || dflags.includes("--winter")) {
     const color = dflags.find(color => ["--halloween", "--winter"].includes(color)).replace("--", "")
     console.debug(`metrics/compute/${login} > applying dflag --halloween`)
     //Color replacer
@@ -157,21 +155,21 @@ export default async function({login, q}, {conf, data, rest, graphql, plugins, q
         .replace(/#30a14e/gi, `var(--color-calendar-${color}-graph-day-L3-bg)`)
         .replace(/#216e39/gi, `var(--color-calendar-${color}-graph-day-L4-bg)`)
     //Update contribution calendar colors
-    computed.calendar.map(day => day.color = replace(day.color))
+    computed.calendar.map(day => (day.color = replace(day.color)))
     //Update calendars colors
     const waiting = [...pending]
-    pending.push((async () => {
-      await Promise.all(waiting)
-      if (data.plugins.isocalendar?.svg)
-        data.plugins.isocalendar.svg = replace(data.plugins.isocalendar.svg)
-      if (data.plugins.calendar?.years) {
-        for (const {weeks} of data.plugins.calendar.years) {
-          for (const {contributionDays} of weeks)
-            contributionDays.forEach(day => day.color = replace(day.color))
+    pending.push(
+      (async () => {
+        await Promise.all(waiting)
+        if (data.plugins.isocalendar?.svg) data.plugins.isocalendar.svg = replace(data.plugins.isocalendar.svg)
+        if (data.plugins.calendar?.years) {
+          for (const {weeks} of data.plugins.calendar.years) {
+            for (const {contributionDays} of weeks) contributionDays.forEach(day => (day.color = replace(day.color)))
+          }
         }
-      }
-      return {name: `dflag.${color}`, result: true}
-    })())
+        return {name: `dflag.${color}`, result: true}
+      })(),
+    )
   }
   if (dflags.includes("--error")) {
     console.debug(`metrics/compute/${login} > applying dflag --error`)

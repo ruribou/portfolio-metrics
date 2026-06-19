@@ -1,11 +1,10 @@
 // @ts-nocheck -- TODO(ts): remove and type this plugin (staged migration)
 //Setup
-export default async function({login, data, imports, q, queries, account}, {enabled = false, extras = false} = {}) {
+export default async function ({login, data, imports, q, queries, account}, {enabled = false, extras = false} = {}) {
   //Plugin execution
   try {
     //Check if plugin is enabled and requirements are met
-    if ((!q.posts) || (!imports.metadata.plugins.posts.enabled(enabled, {extras})))
-      return null
+    if (!q.posts || !imports.metadata.plugins.posts.enabled(enabled, {extras})) return null
 
     //Load inputs
     let {source, descriptions, covers, limit, user} = imports.metadata.plugins.posts.inputs({data, account, q})
@@ -24,9 +23,7 @@ export default async function({login, data, imports, q, queries, account}, {enab
       }
       //Hashnode
       case "hashnode": {
-        posts = (await imports.axios.post("https://api.hashnode.com", {query: queries.posts.hashnode({user})}, {headers: {"Content-type": "application/json"}})).data.data.user.publication.posts.map((
-          {title, brief: description, dateAdded: date, coverImage: image, slug},
-        ) => ({title, description, date, image, link: `https://hashnode.com/post/${slug}`}))
+        posts = (await imports.axios.post("https://api.hashnode.com", {query: queries.posts.hashnode({user})}, {headers: {"Content-type": "application/json"}})).data.data.user.publication.posts.map(({title, brief: description, dateAdded: date, coverImage: image, slug}) => ({title, description, date, image, link: `https://hashnode.com/post/${slug}`}))
         link = `https://hashnode.com/@${user}`
         break
       }
@@ -53,9 +50,8 @@ export default async function({login, data, imports, q, queries, account}, {enab
 
     //Unhandled error
     throw {error: {message: "Failed to retrieve posts"}}
-  }
-  //Handle errors
-  catch (error) {
+  } catch (error) {
+    //Handle errors
     throw imports.format.error(error)
   }
 }

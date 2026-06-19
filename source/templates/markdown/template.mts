@@ -1,6 +1,6 @@
 // @ts-nocheck -- TODO(ts): remove and type this (staged migration)
 /**Template processor */
-export default async function(_, {data}, {imports}) {
+export default async function (_, {data}, {imports}) {
   //Core
   await imports.plugins.core(...arguments)
   //Aliases

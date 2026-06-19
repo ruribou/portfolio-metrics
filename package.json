@@ -10,11 +10,14 @@
     "test-presets": "jest --runInBand presets.test.js --noStackTrace",
     "test-metrics": "jest --runInBand metrics.test.js",
     "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write \"source/**/*.{mts,ts}\" \".github/scripts/**/*.mts\"",
+    "format:check": "prettier --check \"source/**/*.{mts,ts}\" \".github/scripts/**/*.mts\"",
     "build": "node --import tsx .github/scripts/build.mts",
     "presets": "node --import tsx .github/scripts/presets_examples.mts",
     "quickstart": "node --import tsx .github/scripts/quickstart/index.mts",
     "preview": "node --import tsx .github/scripts/preview.mts",
-    "linter": "eslint \"source/**/*.mts\" --quiet",
     "dev": "nodemon --exec \"node --import tsx\" source/app/web/index.mts -e mts,css,ejs,json",
     "postinstall": "node node_modules/puppeteer/install.js",
     "indepth": "node --import tsx source/plugins/languages/analyzers.mts"
@@ -74,6 +77,7 @@
     "dprint": "^0.41.0",
     "eslint": "^8.49.0",
     "jest": "^29.7.0",
+    "prettier": "^3.8.4",
     "typescript": "^6.0.3"
   },
   "jest": {

@@ -16,7 +16,7 @@ import presets from "../metrics/presets.mts"
 import setup from "../metrics/setup.mts"
 
 /**App */
-export default async function({sandbox = false} = {}) {
+export default async function ({sandbox = false} = {}) {
   //Load configuration settings
   const {conf, Plugins, Templates} = await setup({sandbox})
   //Sandbox mode
@@ -31,45 +31,41 @@ export default async function({sandbox = false} = {}) {
   for (const plugin of Object.keys(Plugins).filter(x => !["base", "core"].includes(x))) {
     //Initialization
     const {settings} = conf
-    if (!settings.plugins[plugin])
-      settings.plugins[plugin] = {}
+    if (!settings.plugins[plugin]) settings.plugins[plugin] = {}
     //Auto-enable plugin if needed
-    if (conf.settings["plugins.default"])
-      settings.plugins[plugin].enabled = settings.plugins[plugin].enabled ?? (console.debug(`metrics/app > auto-enabling ${plugin}`), true)
+    if (conf.settings["plugins.default"]) settings.plugins[plugin].enabled = settings.plugins[plugin].enabled ?? (console.debug(`metrics/app > auto-enabling ${plugin}`), true)
     //Mock plugins tokens if they're undefined
     if (mock) {
-      const tokens = Object.entries(conf.metadata.plugins[plugin].inputs).filter(([key, value]: [string, any]) => (!/^plugin_/.test(key)) && (value.type === "token")).map(([key]) => key)
+      const tokens = Object.entries(conf.metadata.plugins[plugin].inputs)
+        .filter(([key, value]: [string, any]) => !/^plugin_/.test(key) && value.type === "token")
+        .map(([key]) => key)
       for (const token of tokens) {
-        if ((!settings.plugins[plugin][token]) || (mock === "force")) {
+        if (!settings.plugins[plugin][token] || mock === "force") {
           console.debug(`metrics/app > using mocked token for ${plugin}.${token}`)
           settings.plugins[plugin][token] = "MOCKED_TOKEN"
         }
       }
     }
   }
-  if (((mock) && (!conf.settings.token)) || (mock === "force")) {
+  if ((mock && !conf.settings.token) || mock === "force") {
     console.debug("metrics/app > using mocked token")
     conf.settings.token = "MOCKED_TOKEN"
   }
-  if (debug)
-    console.debug(util.inspect(conf.settings, {depth: Infinity, maxStringLength: 256}))
+  if (debug) console.debug(util.inspect(conf.settings, {depth: Infinity, maxStringLength: 256}))
 
   //Load octokits
   const api = {graphql: octokit.graphql.defaults({headers: {authorization: `token ${token}`}, baseUrl: conf.settings.api?.graphql ?? undefined}), rest: new OctokitRest.Octokit({auth: token, baseUrl: conf.settings.api?.rest ?? undefined})}
   //Apply mocking if needed
-  if (mock)
-    Object.assign(api, await mocks(api))
+  if (mock) Object.assign(api, await mocks(api))
   //Custom user octokits sessions
   const authenticated = new Map()
   const uapi = session => {
-    if (!/^[a-f0-9]+$/i.test(`${session}`))
-      return null
+    if (!/^[a-f0-9]+$/i.test(`${session}`)) return null
     if (authenticated.has(session)) {
       const {login, token} = authenticated.get(session)
       console.debug(`metrics/app/session/${login} > authenticated with session ${session.substring(0, 6)}, using custom octokit`)
       return {login, graphql: octokit.graphql.defaults({headers: {authorization: `token ${token}`}}), rest: new OctokitRest.Octokit({auth: token})}
-    }
-    else if (session) {
+    } else if (session) {
       console.debug(`metrics/app/session > unknown session ${session.substring(0, 6)}, using default octokit`)
     }
     return null
@@ -83,24 +79,23 @@ export default async function({sandbox = false} = {}) {
   if (ratelimiter) {
     app.set("trust proxy", 1)
     const disabled = ratelimiter.max === 0
-    if (disabled)
-      delete ratelimiter.max
-    middlewares.push(ratelimit({
-      skip(req, _res) {
-        return (disabled) || (!!cache.get(req.params.login))
-      },
-      message: "Too many requests: retry later",
-      headers: true,
-      ...ratelimiter,
-    }))
+    if (disabled) delete ratelimiter.max
+    middlewares.push(
+      ratelimit({
+        skip(req, _res) {
+          return disabled || !!cache.get(req.params.login)
+        },
+        message: "Too many requests: retry later",
+        headers: true,
+        ...ratelimiter,
+      }),
+    )
   }
   //Cache headers middleware
   middlewares.push((req, res, next) => {
     const maxage = Math.round(Number(req.query.cache))
-    if ((cached) || (maxage > 0))
-      res.header("Cache-Control", `public, max-age=${Math.round((maxage > 0 ? maxage : cached) / 1000)}`)
-    else
-      res.header("Cache-Control", "no-store, no-cache")
+    if (cached || maxage > 0) res.header("Cache-Control", `public, max-age=${Math.round((maxage > 0 ? maxage : cached) / 1000)}`)
+    else res.header("Cache-Control", "no-store, no-cache")
     next()
   })
 
@@ -109,9 +104,23 @@ export default async function({sandbox = false} = {}) {
   const metadata = Object.fromEntries(
     Object.entries(conf.metadata.plugins)
       .map(([key, value]) => [key, Object.fromEntries(Object.entries(value).filter(([key]) => ["name", "icon", "category", "web", "supports", "scopes", "deprecated"].includes(key)))])
-      .map(([key, value]: [string, any]) => [key, key === "core" ? {...value, web: Object.fromEntries(Object.entries(value.web).filter(([key]) => /^config[.]/.test(key)).map(([key, value]) => [key.replace(/^config[.]/, ""), value]))} : value]),
+      .map(([key, value]: [string, any]) => [
+        key,
+        key === "core"
+          ? {
+              ...value,
+              web: Object.fromEntries(
+                Object.entries(value.web)
+                  .filter(([key]) => /^config[.]/.test(key))
+                  .map(([key, value]) => [key.replace(/^config[.]/, ""), value]),
+              ),
+            }
+          : value,
+      ]),
   )
-  const enabled = Object.entries(metadata).filter(([_name, {category}]: [string, any]) => category !== "core").map(([name]) => ({name, category: metadata[name]?.category ?? "community", deprecated: metadata[name]?.deprecated ?? false, enabled: plugins[name]?.enabled ?? false}))
+  const enabled = Object.entries(metadata)
+    .filter(([_name, {category}]: [string, any]) => category !== "core")
+    .map(([name]) => ({name, category: metadata[name]?.category ?? "community", deprecated: metadata[name]?.deprecated ?? false, enabled: plugins[name]?.enabled ?? false}))
   const templates = Object.entries(Templates).map(([name]) => ({name, enabled: (conf.settings.templates.enabled.length ? conf.settings.templates.enabled.includes(name) : true) ?? false}))
   const actions = {flush: new Map()}
   const requests = {rest: {limit: 0, used: 0, remaining: 0, reset: NaN}, graphql: {limit: 0, used: 0, remaining: 0, reset: NaN}, search: {limit: 0, used: 0, remaining: 0, reset: NaN}}
@@ -121,16 +130,14 @@ export default async function({sandbox = false} = {}) {
       try {
         const {resources} = (await api.rest.rateLimit.get()).data
         Object.assign(requests, {rest: resources.core, graphql: resources.graphql, search: resources.search})
-      }
-      catch {
+      } catch {
         console.debug("metrics/app > failed to update remaining requests")
       }
     }
     await refresh()
     setInterval(refresh, 15 * 60 * 1000)
     setInterval(() => {
-      if (_requests_refresh)
-        refresh()
+      if (_requests_refresh) refresh()
       _requests_refresh = false
     }, 15 * 1000)
   }
@@ -139,21 +146,19 @@ export default async function({sandbox = false} = {}) {
   app.get("/index.html", limiter, (req, res) => res.sendFile(`${conf.paths.statics}/index.html`))
   app.get("/favicon.ico", limiter, (req, res) => res.sendFile(`${conf.paths.statics}/favicon.png`))
   app.get("/.favicon.png", limiter, (req, res) => res.sendFile(`${conf.paths.statics}/favicon.png`))
-  app.get("/.opengraph.png", limiter, (req, res) => conf.settings.web?.opengraph ? res.redirect(conf.settings.web?.opengraph) : res.sendFile(`${conf.paths.statics}/opengraph.png`))
+  app.get("/.opengraph.png", limiter, (req, res) => (conf.settings.web?.opengraph ? res.redirect(conf.settings.web?.opengraph) : res.sendFile(`${conf.paths.statics}/opengraph.png`)))
   //Plugins and templates
   app.get("/.plugins", limiter, (req, res) => res.status(200).json(enabled))
   app.get("/.plugins.base", limiter, (req, res) => res.status(200).json(conf.settings.plugins.base.parts))
   app.get("/.plugins.metadata", limiter, (req, res) => res.status(200).json(metadata))
   app.get("/.templates", limiter, (req, res) => res.status(200).json(templates))
-  app.get("/.templates/:template", limiter, (req, res) => req.params.template in conf.templates ? res.status(200).json(conf.templates[req.params.template]) : res.sendStatus(404))
-  for (const template in conf.templates)
-    app.use(`/.templates/${template}/partials`, express.static(`${conf.paths.templates}/${template}/partials`))
+  app.get("/.templates/:template", limiter, (req, res) => (req.params.template in conf.templates ? res.status(200).json(conf.templates[req.params.template]) : res.sendStatus(404)))
+  for (const template in conf.templates) app.use(`/.templates/${template}/partials`, express.static(`${conf.paths.templates}/${template}/partials`))
   //Modes and extras
   app.get("/.modes", limiter, (req, res) => res.status(200).json(conf.settings.modes))
   app.get("/.extras", limiter, async (req, res) => {
-    if ((authenticated.has(req.headers["x-metrics-session"])) && (conf.settings.extras?.logged)) {
-      if (conf.settings.extras?.features !== true)
-        return res.status(200).json([...conf.settings.extras.features, ...conf.settings.extras.logged])
+    if (authenticated.has(req.headers["x-metrics-session"]) && conf.settings.extras?.logged) {
+      if (conf.settings.extras?.features !== true) return res.status(200).json([...conf.settings.extras.features, ...conf.settings.extras.logged])
     }
     res.status(200).json(conf.settings.extras?.features ?? conf.settings?.extras?.default ?? false)
   })
@@ -184,11 +189,11 @@ export default async function({sandbox = false} = {}) {
       const custom = uapi(session)
       if (custom) {
         try {
-          const {data: {resources}} = await custom.rest.rateLimit.get()
-          if (resources)
-            return res.status(200).json({rest: resources.core, graphql: resources.graphql, search: resources.search, login: custom.login})
-        }
-        catch (error) {
+          const {
+            data: {resources},
+          } = await custom.rest.rateLimit.get()
+          if (resources) return res.status(200).json({rest: resources.core, graphql: resources.graphql, search: resources.search, login: custom.login})
+        } catch (error) {
           if (error.status === 401) {
             console.debug(`metrics/app/oauth > session ${session.substring(0, 6)} is not valid anymore, removing it from cache`)
             authenticated.delete(session)
@@ -196,8 +201,7 @@ export default async function({sandbox = false} = {}) {
           throw error
         }
       }
-    }
-    catch {} //eslint-disable-line no-empty
+    } catch {} //eslint-disable-line no-empty
     return res.status(200).json(requests)
   })
   app.get("/.hosted", limiter, (req, res) => res.status(200).json(conf.settings.hosted || null))
@@ -234,18 +238,20 @@ export default async function({sandbox = false} = {}) {
       states.set(state, {from, scopes})
       console.debug(`metrics/app/oauth > request ${state}`)
       //OAuth through GitHub
-      return res.redirect(`https://github.com/login/oauth/authorize?${new url.URLSearchParams({
-        client_id: conf.settings.oauth.id,
-        state,
-        redirect_uri: `${conf.settings.oauth.url}/.oauth/authorize`,
-        allow_signup: false,
-        scope: scopes,
-      } as any)}`)
+      return res.redirect(
+        `https://github.com/login/oauth/authorize?${new url.URLSearchParams({
+          client_id: conf.settings.oauth.id,
+          state,
+          redirect_uri: `${conf.settings.oauth.url}/.oauth/authorize`,
+          allow_signup: false,
+          scope: scopes,
+        } as any)}`,
+      )
     })
     app.get("/.oauth/authorize", async (req, res) => {
       //Check state
       const {code, state} = req.query
-      if ((!state) || (!states.has(state))) {
+      if (!state || !states.has(state)) {
         console.debug("metrics/app/oauth > 400 (invalid state)")
         return res.status(400).send("Bad request: invalid state")
       }
@@ -263,7 +269,9 @@ export default async function({sandbox = false} = {}) {
         )
         const token = new url.URLSearchParams(data).get("access_token")
         //Validate user
-        const {data: {login}} = await axios.get("https://api.github.com/user", {headers: {Authorization: `token ${token}`}})
+        const {
+          data: {login},
+        } = await axios.get("https://api.github.com/user", {headers: {Authorization: `token ${token}`}})
         console.debug(`metrics/app/oauth > authorization success for ${login}`)
         const session = crypto.randomBytes(128).toString("hex")
         authenticated.set(session, {login, token})
@@ -271,12 +279,10 @@ export default async function({sandbox = false} = {}) {
         //Redirect user back
         const {from} = states.get(state)
         return res.redirect(`/.oauth/redirect?${new url.URLSearchParams({to: from, session})}`)
-      }
-      catch {
+      } catch {
         console.debug("metrics/app/oauth > authorization failed")
         return res.status(401).send("Unauthorized: oauth failed")
-      }
-      finally {
+      } finally {
         states.delete(state)
       }
     })
@@ -289,15 +295,13 @@ export default async function({sandbox = false} = {}) {
           authenticated.delete(session)
           console.debug(`metrics/app/oauth > deleted session ${session.substring(0, 6)}`)
           return res.redirect("/.oauth")
-        }
-        catch {} //eslint-disable-line no-empty
+        } catch {} //eslint-disable-line no-empty
       }
       return res.status(400).send("Bad request: invalid session")
     })
     app.get("/.oauth/redirect", limiter, (req, res) => res.sendFile(`${conf.paths.statics}/oauth/redirect.html`))
     app.get("/.oauth/enabled", limiter, (req, res) => res.json(true))
-  }
-  else {
+  } else {
     app.get("/.oauth/enabled", limiter, (req, res) => res.json(false))
   }
 
@@ -328,8 +332,7 @@ export default async function({sandbox = false} = {}) {
         console.debug(`metrics/app/${login}/insights > 400 (invalid plugin name)`)
         return res.status(400).send("Bad request: plugin name seems invalid")
       }
-      if (cache.get(`insights.${login}.${plugin}`))
-        return res.send(cache.get(`insights.${login}.${plugin}`))
+      if (cache.get(`insights.${login}.${plugin}`)) return res.send(cache.get(`insights.${login}.${plugin}`))
       return res.status(204).send("No content: no data fetched yet")
     })
     app.get("/insights/query/:login/", ...middlewares, async (req, res) => {
@@ -343,15 +346,14 @@ export default async function({sandbox = false} = {}) {
       let solve = null
       try {
         //Prevent multiples requests
-        if ((!debug) && (!mock) && (pending.has(`insights.${login}`))) {
+        if (!debug && !mock && pending.has(`insights.${login}`)) {
           console.debug(`metrics/app/${login}/insights > awaiting pending request`)
           await pending.get(`insights.${login}`)
-        }
-        else {
-          pending.set(`insights.${login}`, new Promise(_solve => solve = _solve))
+        } else {
+          pending.set(`insights.${login}`, new Promise(_solve => (solve = _solve)))
         }
         //Read cached data if possible
-        if ((!debug) && (cached) && (cache.get(`insights.${login}`))) {
+        if (!debug && cached && cache.get(`insights.${login}`)) {
           console.debug(`metrics/app/${login}/insights > using cached results`)
           return res.send(cache.get(`insights.${login}`))
         }
@@ -368,27 +370,25 @@ export default async function({sandbox = false} = {}) {
             const json = await (metrics as any).insights({login}, {...api, ...uapi(req.headers["x-metrics-session"]), conf, callbacks}, {Plugins, Templates})
             //Cache
             cache.put(`insights.${login}`, json)
-            if ((!debug) && (cached)) {
+            if (!debug && cached) {
               const maxage = Math.round(Number(req.query.cache))
               cache.put(`insights.${login}`, json, maxage > 0 ? maxage : cached)
             }
-          }
-          catch (error) {
+          } catch (error) {
             console.error(`metrics/app/${login}/insights > error > ${error}`)
           }
         })()
         console.debug(`metrics/app/${login}/insights > accepted request`)
         return res.status(202).json({processing: true, plugins: Object.keys((metrics as any).insights.plugins)})
-      }
-      //Internal error
-      catch (error) {
+      } catch (error) {
+        //Internal error
         //Not found user
-        if ((error instanceof Error) && (/^user not found$/.test(error.message))) {
+        if (error instanceof Error && /^user not found$/.test(error.message)) {
           console.debug(`metrics/app/${login} > 404 (user/organization not found)`)
           return res.status(404).send("Not found: unknown user or organization")
         }
         //GitHub failed request
-        if ((error instanceof Error) && (/this may be the result of a timeout, or it could be a GitHub bug/i.test((error as any).errors?.[0]?.message))) {
+        if (error instanceof Error && /this may be the result of a timeout, or it could be a GitHub bug/i.test((error as any).errors?.[0]?.message)) {
           console.debug(`metrics/app/${login} > 502 (bad gateway from GitHub)`)
           const request = encodeURIComponent((error as any).errors[0].message.match(/`(?<request>[\w:]+)`/)?.groups?.request ?? "").replace(/%3A/g, ":")
           return res.status(500).send(`Internal Server Error: failed to execute request ${request} (this may be the result of a timeout, or it could be a GitHub bug)`)
@@ -396,14 +396,12 @@ export default async function({sandbox = false} = {}) {
         //General error
         console.error(error)
         return res.status(500).send("Internal Server Error: failed to process metrics correctly")
-      }
-      finally {
+      } finally {
         solve?.()
         _requests_refresh = true
       }
     })
-  }
-  else {
+  } else {
     app.get("/about/*", (req, res) => res.redirect(req.path.replace("/about/", "/insights/")))
     app.get("/insights/*", (req, res) => res.status(405).send("Method not allowed: this endpoint is not available"))
   }
@@ -424,43 +422,40 @@ export default async function({sandbox = false} = {}) {
       const repository = req.params.repository?.replace(/[\n\r]/g, "")
       let solve = null
       //Check username
-      if ((login.startsWith(".")) || (login.includes("/")))
-        return next()
+      if (login.startsWith(".") || login.includes("/")) return next()
       if (!/^[-\w]+$/i.test(login)) {
         console.debug(`metrics/app/${login} > 400 (invalid username)`)
         return res.status(400).send("Bad request: username seems invalid")
       }
       //Allowed list check
-      if ((restricted.length) && (!restricted.includes(login))) {
+      if (restricted.length && !restricted.includes(login)) {
         console.debug(`metrics/app/${login} > 403 (not in allowed users)`)
         return res.status(403).send("Forbidden: username not in allowed list")
       }
       //Prevent multiples requests
-      if ((!debug) && (!mock) && (pending.has(login))) {
+      if (!debug && !mock && pending.has(login)) {
         console.debug(`metrics/app/${login} > awaiting pending request`)
         await pending.get(login)
-      }
-      else {
-        pending.set(login, new Promise(_solve => solve = _solve))
+      } else {
+        pending.set(login, new Promise(_solve => (solve = _solve)))
       }
 
       //Read cached data if possible
-      if ((!debug) && (cached) && (cache.get(login))) {
+      if (!debug && cached && cache.get(login)) {
         console.debug(`metrics/app/${login} > using cached image`)
         const {rendered, mime} = cache.get(login)
         res.header("Content-Type", mime)
         return res.send(rendered)
       }
       //Maximum simultaneous users
-      if ((maxusers) && (cache.size() + 1 > maxusers)) {
+      if (maxusers && cache.size() + 1 > maxusers) {
         console.debug(`metrics/app/${login} > 503 (maximum users reached)`)
         return res.status(503).send("Service Unavailable: maximum number of users reached, only cached metrics are available")
       }
       //Repository alias
       if (repository) {
         console.debug(`metrics/app/${login} > compute repository metrics`)
-        if (!req.query.template)
-          req.query.template = "repository"
+        if (!req.query.template) req.query.template = "repository"
         req.query.repo = repository
       }
 
@@ -471,55 +466,58 @@ export default async function({sandbox = false} = {}) {
         console.debug(`metrics/app/${login} > ${util.inspect(q, {depth: Infinity, maxStringLength: 256})}`)
         const octokit = {...api, ...uapi(req.headers["x-metrics-session"])}
         let uconf = conf
-        if ((octokit.login) && (conf.settings.extras?.logged) && (uconf.settings.extras?.features !== true)) {
+        if (octokit.login && conf.settings.extras?.logged && uconf.settings.extras?.features !== true) {
           console.debug(`metrics/app/${login} > session is authenticated, adding additional permissions ${conf.settings.extras.logged}`)
           uconf = {...conf, settings: {...conf.settings, extras: {...conf.settings.extras}}}
           uconf.settings.extras.features = uconf.settings.extras.features ?? []
           uconf.settings.extras.features.push(...conf.settings.extras.logged)
         }
         //Preset
-        if ((q["config.presets"]) && ((uconf.settings.extras?.features?.includes("metrics.setup.community.presets")) || (uconf.settings.extras?.features === true) || (uconf.settings.extras?.default))) {
+        if (q["config.presets"] && (uconf.settings.extras?.features?.includes("metrics.setup.community.presets") || uconf.settings.extras?.features === true || uconf.settings.extras?.default)) {
           console.debug(`metrics/app/${login} > presets have been specified, loading them`)
           Object.assign(q, await presets(q["config.presets"]))
         }
         //Render
         const convert = uconf.settings.outputs.includes(q["config.output"]) ? q["config.output"] : uconf.settings.outputs[0]
-        const {rendered, mime} = await metrics({login, q}, {
-          ...octokit,
-          plugins,
-          conf: uconf,
-          die: q["plugins.errors.fatal"] ?? false,
-          verify: q.verify ?? false,
-          convert: convert !== "auto" ? convert : null,
-        }, {Plugins, Templates})
+        const {rendered, mime} = await metrics(
+          {login, q},
+          {
+            ...octokit,
+            plugins,
+            conf: uconf,
+            die: q["plugins.errors.fatal"] ?? false,
+            verify: q.verify ?? false,
+            convert: convert !== "auto" ? convert : null,
+          },
+          {Plugins, Templates},
+        )
         //Cache
-        if ((!debug) && (cached)) {
+        if (!debug && cached) {
           const maxage = Math.round(Number(req.query.cache))
           cache.put(login, {rendered, mime}, maxage > 0 ? maxage : cached)
         }
         //Send response
         res.header("Content-Type", mime)
         return res.send(rendered)
-      }
-      //Internal error
-      catch (error) {
+      } catch (error) {
+        //Internal error
         //Not found user
-        if ((error instanceof Error) && (/^user not found$/.test(error.message))) {
+        if (error instanceof Error && /^user not found$/.test(error.message)) {
           console.debug(`metrics/app/${login} > 404 (user/organization not found)`)
           return res.status(404).send("Not found: unknown user or organization")
         }
         //Invalid template
-        if ((error instanceof Error) && (/^unsupported template$/.test(error.message))) {
+        if (error instanceof Error && /^unsupported template$/.test(error.message)) {
           console.debug(`metrics/app/${login} > 400 (bad request)`)
           return res.status(400).send("Bad request: unsupported template")
         }
         //Unsupported output format or account type
-        if ((error instanceof Error) && (/^not supported for: [\s\S]*$/.test(error.message))) {
+        if (error instanceof Error && /^not supported for: [\s\S]*$/.test(error.message)) {
           console.debug(`metrics/app/${login} > 406 (Not Acceptable)`)
           return res.status(406).send("Not Acceptable: unsupported output format or account type for specified parameters")
         }
         //GitHub failed request
-        if ((error instanceof Error) && (/this may be the result of a timeout, or it could be a GitHub bug/i.test((error as any).errors?.[0]?.message))) {
+        if (error instanceof Error && /this may be the result of a timeout, or it could be a GitHub bug/i.test((error as any).errors?.[0]?.message)) {
           console.debug(`metrics/app/${login} > 502 (bad gateway from GitHub)`)
           const request = encodeURIComponent((error as any).errors[0].message.match(/`(?<request>[\w:]+)`/)?.groups?.request ?? "").replace(/%3A/g, ":")
           return res.status(500).send(`Internal Server Error: failed to execute request ${request} (this may be the result of a timeout, or it could be a GitHub bug)`)
@@ -527,15 +525,13 @@ export default async function({sandbox = false} = {}) {
         //General error
         console.error(error)
         return res.status(500).send("Internal Server Error: failed to process metrics correctly")
-      }
-      finally {
+      } finally {
         //After rendering
         solve?.()
         _requests_refresh = true
       }
     })
-  }
-  else {
+  } else {
     app.get("/embed/*", (req, res) => res.status(405).send("Method not allowed: this endpoint is not available"))
   }
 
@@ -559,34 +555,40 @@ export default async function({sandbox = false} = {}) {
 
   //Listen
   app.listen(port, () =>
-    console.log([
-      "───────────────────────────────────────────────────────────────────",
-      "── Server configuration ───────────────────────────────────────────",
-      `Listening on port         │ ${port}`,
-      `Modes                     │ ${conf.settings.modes}`,
-      "── Server capacity ───────────────────────────────────────────────",
-      `Restricted to users       │ ${restricted.size ? [...restricted].join(", ") : "(unrestricted)"}`,
-      `Max simultaneous users    │ ${maxusers ? `${maxusers} users` : "(unrestricted)"}`,
-      `Rate limiter              │ ${ratelimiter ? util.inspect(ratelimiter, {depth: Infinity, maxStringLength: 256}) : "(enabled)"}`,
-      `Max repositories per user │ ${conf.settings.repositories}`,
-      "── Render settings ────────────────────────────────────────────────",
-      `Cached time               │ ${cached} seconds`,
-      `SVG optimization          │ ${conf.settings.optimize ?? false}`,
-      `Allowed outputs           │ ${conf.settings.outputs.join(", ")}`,
-      `Padding                   │ ${conf.settings.padding}`,
-      "── Sandbox ────────────────────────────────────────────────────────",
-      `Debug                     │ ${debug}`,
-      `Debug (puppeteer)         │ ${conf.settings["debug.headless"] ?? false}`,
-      `Mocked data               │ ${conf.settings.mocked ?? false}`,
-      "── Content ────────────────────────────────────────────────────────",
-      `Plugins enabled           │ ${enabled.map(({name}) => name).join(", ")}`,
-      `Templates enabled         │ ${templates.filter(({enabled}) => enabled).map(({name}) => name).join(", ")}`,
-      "── OAuth ──────────────────────────────────────────────────────────",
-      `Client id                 │ ${conf.settings.oauth?.id ?? "(none)"}`,
-      "── Extras ─────────────────────────────────────────────────────────",
-      `Default                   │ ${conf.settings.extras?.default ?? false}`,
-      `Features                  │ ${Array.isArray(conf.settings.extras?.features) ? conf.settings.extras.features?.length ? conf.settings.extras?.features : "(none)" : "(default)"}`,
-      "───────────────────────────────────────────────────────────────────",
-      "Server ready !",
-    ].join("\n")))
+    console.log(
+      [
+        "───────────────────────────────────────────────────────────────────",
+        "── Server configuration ───────────────────────────────────────────",
+        `Listening on port         │ ${port}`,
+        `Modes                     │ ${conf.settings.modes}`,
+        "── Server capacity ───────────────────────────────────────────────",
+        `Restricted to users       │ ${restricted.size ? [...restricted].join(", ") : "(unrestricted)"}`,
+        `Max simultaneous users    │ ${maxusers ? `${maxusers} users` : "(unrestricted)"}`,
+        `Rate limiter              │ ${ratelimiter ? util.inspect(ratelimiter, {depth: Infinity, maxStringLength: 256}) : "(enabled)"}`,
+        `Max repositories per user │ ${conf.settings.repositories}`,
+        "── Render settings ────────────────────────────────────────────────",
+        `Cached time               │ ${cached} seconds`,
+        `SVG optimization          │ ${conf.settings.optimize ?? false}`,
+        `Allowed outputs           │ ${conf.settings.outputs.join(", ")}`,
+        `Padding                   │ ${conf.settings.padding}`,
+        "── Sandbox ────────────────────────────────────────────────────────",
+        `Debug                     │ ${debug}`,
+        `Debug (puppeteer)         │ ${conf.settings["debug.headless"] ?? false}`,
+        `Mocked data               │ ${conf.settings.mocked ?? false}`,
+        "── Content ────────────────────────────────────────────────────────",
+        `Plugins enabled           │ ${enabled.map(({name}) => name).join(", ")}`,
+        `Templates enabled         │ ${templates
+          .filter(({enabled}) => enabled)
+          .map(({name}) => name)
+          .join(", ")}`,
+        "── OAuth ──────────────────────────────────────────────────────────",
+        `Client id                 │ ${conf.settings.oauth?.id ?? "(none)"}`,
+        "── Extras ─────────────────────────────────────────────────────────",
+        `Default                   │ ${conf.settings.extras?.default ?? false}`,
+        `Features                  │ ${Array.isArray(conf.settings.extras?.features) ? (conf.settings.extras.features?.length ? conf.settings.extras?.features : "(none)") : "(default)"}`,
+        "───────────────────────────────────────────────────────────────────",
+        "Server ready !",
+      ].join("\n"),
+    ),
+  )
 }

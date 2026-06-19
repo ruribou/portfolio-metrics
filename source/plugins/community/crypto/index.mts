@@ -1,29 +1,24 @@
 // @ts-nocheck -- TODO(ts): remove and type this plugin (staged migration)
 //Setup
-export default async function({login, q, imports, data, account}, {enabled = false, extras = false} = {}) {
+export default async function ({login, q, imports, data, account}, {enabled = false, extras = false} = {}) {
   //Plugin execution
   try {
     //Check if plugin is enabled and requirements are met
-    if ((!q.crypto) || (!imports.metadata.plugins.crypto.enabled(enabled, {extras})))
-      return null
+    if (!q.crypto || !imports.metadata.plugins.crypto.enabled(enabled, {extras})) return null
 
     //Load inputs
     let {id, days, vs_currency, precision} = imports.metadata.plugins.crypto.inputs({data, account, q})
-    if (!id)
-      throw {error: {message: "Crypto currency id is not set"}}
+    if (!id) throw {error: {message: "Crypto currency id is not set"}}
 
     console.debug(`metrics/compute/${login}/plugins > crypto > querying api for crypto`)
 
-    const {
-      data: coin,
-    } = await imports.axios.get(`https://api.coingecko.com/api/v3/coins/${id}`, {
+    const {data: coin} = await imports.axios.get(`https://api.coingecko.com/api/v3/coins/${id}`, {
       params: {
         market_data: true,
       },
     })
 
-    if (!coin)
-      throw {error: {message: "Crypto currency not found"}}
+    if (!coin) throw {error: {message: "Crypto currency not found"}}
 
     const {
       data: {prices},
@@ -62,9 +57,8 @@ export default async function({login, q, imports, data, account}, {enabled = fal
       vs_currency,
       logo: coin.image.small,
     }
-  }
-  //Handle errors
-  catch (error) {
+  } catch (error) {
+    //Handle errors
     throw imports.format.error(error)
   }
 }

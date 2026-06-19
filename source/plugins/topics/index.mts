@@ -1,11 +1,10 @@
 // @ts-nocheck -- TODO(ts): remove and type this plugin (staged migration)
 //Setup
-export default async function({login, data, imports, q, account}, {enabled = false, extras = false} = {}) {
+export default async function ({login, data, imports, q, account}, {enabled = false, extras = false} = {}) {
   //Plugin execution
   try {
     //Check if plugin is enabled and requirements are met
-    if ((!q.topics) || (!imports.metadata.plugins.topics.enabled(enabled, {extras})))
-      return null
+    if (!q.topics || !imports.metadata.plugins.topics.enabled(enabled, {extras})) return null
 
     //Load inputs
     let {sort, mode, limit} = imports.metadata.plugins.topics.inputs({data, account, q})
@@ -34,7 +33,7 @@ export default async function({login, data, imports, q, account}, {enabled = fal
           description: li.querySelector(".f5").innerText,
           icon: li.querySelector("img")?.src ?? null,
           url: li.querySelector("a")?.href ?? null,
-        }))
+        })),
       )
       console.debug(`metrics/compute/${login}/plugins > topics > extracted ${starred.length} starred topics`)
       //Check if next page exists
@@ -56,11 +55,10 @@ export default async function({login, data, imports, q, account}, {enabled = fal
     }
 
     //Limit topics (labels)
-    if ((type === "labels") && (limit > 0)) {
+    if (type === "labels" && limit > 0) {
       console.debug(`metrics/compute/${login}/plugins > topics > keeping only ${limit} topics`)
       const removed = topics.splice(limit)
-      if (removed.length)
-        topics.push({name: `And ${removed.length} more...`, description: removed.map(({name}) => name).join(", "), icon: null})
+      if (removed.length) topics.push({name: `And ${removed.length} more...`, description: removed.map(({name}) => name).join(", "), icon: null})
     }
 
     //Convert icons to base64
@@ -77,7 +75,7 @@ export default async function({login, data, imports, q, account}, {enabled = fal
     }
 
     //Limit topics (icons)
-    if ((type === "icons") && (limit > 0)) {
+    if (type === "icons" && limit > 0) {
       console.debug(`metrics/compute/${login}/plugins > topics > filtering topics with icon`)
       topics = topics.filter(({icon}) => icon)
       console.debug(`metrics/compute/${login}/plugins > topics > keeping only ${limit} topics`)
@@ -86,9 +84,8 @@ export default async function({login, data, imports, q, account}, {enabled = fal
 
     //Results
     return {mode, type, list: topics}
-  }
-  //Handle errors
-  catch (error) {
+  } catch (error) {
+    //Handle errors
     throw imports.format.error(error)
   }
 }

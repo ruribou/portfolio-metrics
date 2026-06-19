@@ -1,11 +1,10 @@
 // @ts-nocheck -- TODO(ts): remove and type this plugin (staged migration)
 //Setup
-export default async function({login, q, imports, data, graphql, queries, account}, {enabled = false, extras = false} = {}) {
+export default async function ({login, q, imports, data, graphql, queries, account}, {enabled = false, extras = false} = {}) {
   //Plugin execution
   try {
     //Check if plugin is enabled and requirements are met
-    if ((!q.introduction) || (!imports.metadata.plugins.introduction.enabled(enabled, {extras})))
-      return null
+    if (!q.introduction || !imports.metadata.plugins.introduction.enabled(enabled, {extras})) return null
 
     //Load inputs
     let {title} = imports.metadata.plugins.introduction.inputs({data, account, q})
@@ -24,9 +23,8 @@ export default async function({login, q, imports, data, graphql, queries, accoun
 
     //Results
     return {mode: context.mode, title, text}
-  }
-  //Handle errors
-  catch (error) {
+  } catch (error) {
+    //Handle errors
     throw imports.format.error(error)
   }
 }

@@ -1,11 +1,10 @@
 // @ts-nocheck -- TODO(ts): remove and type this plugin (staged migration)
 //Setup
-export default async function({login, data, graphql, q, imports, queries, account}, {enabled = false, extras = false} = {}) {
+export default async function ({login, data, graphql, q, imports, queries, account}, {enabled = false, extras = false} = {}) {
   //Plugin execution
   try {
     //Check if plugin is enabled and requirements are met
-    if ((!q.gists) || (!imports.metadata.plugins.gists.enabled(enabled, {extras})))
-      return null
+    if (!q.gists || !imports.metadata.plugins.gists.enabled(enabled, {extras})) return null
 
     //Load inputs
     imports.metadata.plugins.gists.inputs({data, account, q})
@@ -18,23 +17,28 @@ export default async function({login, data, graphql, q, imports, queries, accoun
       let pushed = 0
       do {
         console.debug(`metrics/compute/${login}/plugins > gists > retrieving gists after ${cursor}`)
-        const {user: {gists: {edges, nodes, totalCount}}} = await graphql(queries.gists({login, after: cursor ? `after: "${cursor}"` : ""}))
+        const {
+          user: {
+            gists: {edges, nodes, totalCount},
+          },
+        } = await graphql(queries.gists({login, after: cursor ? `after: "${cursor}"` : ""}))
         cursor = edges?.[edges?.length - 1]?.cursor
         gists.push(...nodes)
         gists.totalCount = totalCount
         pushed = nodes.length
-      }
-      while ((pushed) && (cursor))
+      } while (pushed && cursor)
       console.debug(`metrics/compute/${login}/plugins > gists > loaded ${gists.length} gists`)
     }
 
     //Iterate through gists
     console.debug(`metrics/compute/${login}/plugins > gists > processing ${gists.length} gists`)
-    let comments = 0, files = 0, forks = 0, stargazers = 0
+    let comments = 0,
+      files = 0,
+      forks = 0,
+      stargazers = 0
     for (const gist of gists) {
       //Skip forks
-      if (gist.isFork)
-        continue
+      if (gist.isFork) continue
       //Compute stars, forks, comments and files count
       stargazers += gist.stargazerCount
       forks += gist.forks.totalCount
@@ -44,9 +48,8 @@ export default async function({login, data, graphql, q, imports, queries, accoun
 
     //Results
     return {totalCount: gists.totalCount, stargazers, forks, files, comments}
-  }
-  //Handle errors
-  catch (error) {
+  } catch (error) {
+    //Handle errors
     throw imports.format.error(error)
   }
 }

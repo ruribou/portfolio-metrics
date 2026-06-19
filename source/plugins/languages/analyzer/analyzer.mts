@@ -4,7 +4,7 @@ import fs from "fs/promises"
 import os from "os"
 import paths from "path"
 import git from "simple-git"
-import { filters } from "../../../app/metrics/utils.mts"
+import {filters} from "../../../app/metrics/utils.mts"
 import core from "@actions/core"
 
 /**Analyzer */
@@ -42,25 +42,26 @@ export class Analyzer {
 
   /**Run analyzer */
   async run(runner) {
-    if (this.consumed)
-      throw new Error("This analyzer has already been consumed, another instance needs to be created to perform a new analysis")
+    if (this.consumed) throw new Error("This analyzer has already been consumed, another instance needs to be created to perform a new analysis")
     this.consumed = true
     const results = await new Promise(async solve => {
       let completed = false
       if (Number.isFinite(this.timeout.global)) {
         this.debug(`timeout set to ${this.timeout.global}m`)
-        setTimeout(() => {
-          if (!completed) {
-            try {
-              this.debug(`reached maximum execution time of ${this.timeout.global}m for analysis`)
-              this.results.partial.global = true
-              solve(this.results)
+        setTimeout(
+          () => {
+            if (!completed) {
+              try {
+                this.debug(`reached maximum execution time of ${this.timeout.global}m for analysis`)
+                this.results.partial.global = true
+                solve(this.results)
+              } catch {
+                //Ignore errors
+              }
             }
-            catch {
-              //Ignore errors
-            }
-          }
-        }, this.timeout.global * 60 * 1000)
+          },
+          this.timeout.global * 60 * 1000,
+        )
       }
       await runner()
       completed = true
@@ -71,10 +72,10 @@ export class Analyzer {
 
   /**Parse repository */
   parse(repository) {
-    let branch = null, ref = null
+    let branch = null,
+      ref = null
     if (typeof repository === "string") {
-      if (!this.parser.test(repository))
-        throw new TypeError(`"${repository}" pattern is not supported`)
+      if (!this.parser.test(repository)) throw new TypeError(`"${repository}" pattern is not supported`)
       const {login, name, ...groups} = repository.match(this.parser)?.groups ?? {}
       repository = {owner: {login}, name}
       branch = groups.branch ?? null
@@ -106,8 +107,7 @@ export class Analyzer {
         await git(path).branch(branch)
       }
       return true
-    }
-    catch (error) {
+    } catch (error) {
       this.debug(`failed to clone https://github.com/${repo} (${error})`)
       this.clean(path)
       return false
@@ -118,12 +118,12 @@ export class Analyzer {
   async analyze(path, {commits = []} = {}) {
     const cache = {files: {}, languages: {}}
     const start = Date.now()
-    let elapsed = 0, processed = 0
-    if (this.timeout.repositories)
-      this.debug(`timeout for repository analysis set to ${this.timeout.repositories}m`)
+    let elapsed = 0,
+      processed = 0
+    if (this.timeout.repositories) this.debug(`timeout for repository analysis set to ${this.timeout.repositories}m`)
     for (const commit of commits) {
       elapsed = (Date.now() - start) / 1000 / 60
-      if ((this.timeout.repositories) && (elapsed > this.timeout.repositories)) {
+      if (this.timeout.repositories && elapsed > this.timeout.repositories) {
         this.results.partial.repositories = true
         this.debug(`reached maximum execution time of ${this.timeout.repositories}m for repository analysis (${elapsed}m elapsed)`)
         break
@@ -136,23 +136,18 @@ export class Analyzer {
         this.results.missed.lines += missed.lines
         this.results.missed.bytes += missed.bytes
         for (const language in lines) {
-          if (this.categories.includes(cache.languages[language]?.type))
-            this.results.lines[language] = (this.results.lines[language] ?? 0) + lines[language]
+          if (this.categories.includes(cache.languages[language]?.type)) this.results.lines[language] = (this.results.lines[language] ?? 0) + lines[language]
         }
         for (const language in stats) {
-          if (this.categories.includes(cache.languages[language]?.type))
-            this.results.stats[language] = (this.results.stats[language] ?? 0) + stats[language]
+          if (this.categories.includes(cache.languages[language]?.type)) this.results.stats[language] = (this.results.stats[language] ?? 0) + stats[language]
         }
-      }
-      catch (error) {
+      } catch (error) {
         this.debug(`skipping commit ${commit.sha} (${error})`)
         this.results.missed.commits++
-      }
-      finally {
+      } finally {
         this.results.elapsed += elapsed
         processed++
-        if ((processed % 50 === 0) || (processed === commits.length))
-          this.debug(`at commit ${processed}/${commits.length} (${(100 * processed / commits.length).toFixed(2)}%, ${elapsed.toFixed(2)}m elapsed)`)
+        if (processed % 50 === 0 || processed === commits.length) this.debug(`at commit ${processed}/${commits.length} (${((100 * processed) / commits.length).toFixed(2)}%, ${elapsed.toFixed(2)}m elapsed)`)
       }
     }
     this.results.colors = Object.fromEntries(Object.entries(cache.languages).map(([lang, {color}]) => [lang, color]))
@@ -165,8 +160,7 @@ export class Analyzer {
       await fs.rm(path, {recursive: true, force: true})
       this.debug(`cleaned ${path}`)
       return true
-    }
-    catch (error) {
+    } catch (error) {
       this.debug(`failed to clean (${error})`)
       return false
     }
@@ -175,8 +169,7 @@ export class Analyzer {
   /**Whether to skip a repository or not */
   ignore(repository) {
     const ignored = !filters.repo(repository, this.skipped)
-    if (ignored)
-      this.debug(`skipping ${typeof repository === "string" ? repository : `${repository?.owner?.login}/${repository?.name}`} as it matches skipped repositories`)
+    if (ignored) this.debug(`skipping ${typeof repository === "string" ? repository : `${repository?.owner?.login}/${repository?.name}`} as it matches skipped repositories`)
     return ignored
   }
 

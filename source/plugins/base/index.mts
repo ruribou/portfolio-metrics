@@ -5,7 +5,7 @@
  */
 
 //Setup
-export default async function({login, graphql, rest, data, q, queries, imports, callbacks}, conf) {
+export default async function ({login, graphql, rest, data, q, queries, imports, callbacks}, conf) {
   //Load inputs
   console.debug(`metrics/compute/${login}/base > started`)
   let {indepth, hireable, skip, "repositories.forks": _forks, "repositories.affiliations": _affiliations, "repositories.batch": _batch} = imports.metadata.plugins.base.inputs({data, q, account: "bypass"})
@@ -15,15 +15,14 @@ export default async function({login, graphql, rest, data, q, queries, imports, 
   console.debug(`metrics/compute/${login}/base > affiliations constraints ${affiliations}`)
 
   //Skip initial data gathering if not needed
-  if ((conf.settings.notoken) || (skip)) {
+  if (conf.settings.notoken || skip) {
     await callbacks?.plugin?.(login, "base", true, data).catch(error => console.debug(`metrics/compute/${login}/plugins/callbacks > base > ${error}`))
     return (postprocess.skip({login, data, imports}), {})
   }
 
   //Base parts (legacy handling for web instance)
-  const defaulted = ("base" in q) ? legacy.converter(q.base) ?? true : true
-  for (const part of conf.settings.plugins.base.parts)
-    data.base[part] = `base.${part}` in q ? legacy.converter(q[`base.${part}`]) : defaulted
+  const defaulted = "base" in q ? (legacy.converter(q.base) ?? true) : true
+  for (const part of conf.settings.plugins.base.parts) data.base[part] = `base.${part}` in q ? legacy.converter(q[`base.${part}`]) : defaulted
 
   //Iterate through account types
   for (const account of ["user", "organization"]) {
@@ -34,21 +33,20 @@ export default async function({login, graphql, rest, data, q, queries, imports, 
       Object.assign(data, {user: queried[account]})
       postprocess?.[account]({login, data})
       try {
-        Object.assign(data.user, (await graphql(queries.base[`${account}.x`]({login, account, "calendar.from": new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(), "calendar.to": (new Date()).toISOString(), affiliations})))[account])
+        Object.assign(data.user, (await graphql(queries.base[`${account}.x`]({login, account, "calendar.from": new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(), "calendar.to": new Date().toISOString(), affiliations})))[account])
         console.debug(`metrics/compute/${login}/base > successfully loaded bulk query`)
-      }
-      catch {
+      } catch {
         console.debug(`metrics/compute/${login}/base > failed to load bulk query, falling back to unit queries`)
         //Query basic fields
-        const fields = {
-          user: ["packages", "starredRepositories", "watching", "sponsorshipsAsSponsor", "sponsorshipsAsMaintainer", "followers", "following", "issueComments", "organizations", "repositoriesContributedTo(includeUserRepositories: true)"],
-          organization: ["packages", "sponsorshipsAsSponsor", "sponsorshipsAsMaintainer", "membersWithRole"],
-        }[account] ?? []
+        const fields =
+          {
+            user: ["packages", "starredRepositories", "watching", "sponsorshipsAsSponsor", "sponsorshipsAsMaintainer", "followers", "following", "issueComments", "organizations", "repositoriesContributedTo(includeUserRepositories: true)"],
+            organization: ["packages", "sponsorshipsAsSponsor", "sponsorshipsAsMaintainer", "membersWithRole"],
+          }[account] ?? []
         for (const field of fields) {
           try {
             Object.assign(data.user, (await graphql(queries.base.field({login, account, field})))[account])
-          }
-          catch {
+          } catch {
             console.debug(`metrics/compute/${login}/base > failed to retrieve ${field}`)
             data.user[field] = {totalCount: NaN}
           }
@@ -57,8 +55,7 @@ export default async function({login, graphql, rest, data, q, queries, imports, 
         for (const field of ["totalCount", "totalDiskUsage"]) {
           try {
             Object.assign(data.user.repositories, (await graphql(queries.base["field.repositories"]({login, account, field, affiliations})))[account].repositories)
-          }
-          catch (error) {
+          } catch (error) {
             console.debug(`metrics/compute/${login}/base > failed to retrieve repositories.${field}`)
             data.user.repositories[field] = NaN
           }
@@ -71,8 +68,7 @@ export default async function({login, graphql, rest, data, q, queries, imports, 
             for (const field of fields) {
               try {
                 Object.assign(data.user.contributionsCollection, (await graphql(queries.base.contributions({login, account, field, range: ""})))[account].contributionsCollection)
-              }
-              catch {
+              } catch {
                 console.debug(`metrics/compute/${login}/base > failed to retrieve contributionsCollection.${field}`)
                 data.user.contributionsCollection[field] = NaN
               }
@@ -80,9 +76,8 @@ export default async function({login, graphql, rest, data, q, queries, imports, 
           }
           //Query calendar
           try {
-            Object.assign(data.user, (await graphql(queries.base.calendar({login, "calendar.from": new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(), "calendar.to": (new Date()).toISOString()})))[account])
-          }
-          catch {
+            Object.assign(data.user, (await graphql(queries.base.calendar({login, "calendar.from": new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(), "calendar.to": new Date().toISOString()})))[account])
+          } catch {
             console.debug(`metrics/compute/${login}/base > failed to retrieve contributions calendar`)
             data.user.calendar = {contributionCalendar: {weeks: []}}
           }
@@ -90,7 +85,7 @@ export default async function({login, graphql, rest, data, q, queries, imports, 
       }
       //Query contributions collection over account lifetime instead of last year
       if (account === "user") {
-        if ((indepth) && (imports.metadata.plugins.base.extras("indepth", {...conf.settings, error: false}))) {
+        if (indepth && imports.metadata.plugins.base.extras("indepth", {...conf.settings, error: false})) {
           const fields = ["totalRepositoriesWithContributedCommits", "totalCommitContributions", "restrictedContributionsCount", "totalIssueContributions", "totalPullRequestContributions", "totalPullRequestReviewContributions"]
           const start = new Date(data.user.createdAt)
           const end = new Date()
@@ -98,12 +93,11 @@ export default async function({login, graphql, rest, data, q, queries, imports, 
           for (const field of fields) {
             collection[field] = 0
             //Load contribution calendar
-            for (let from = new Date(start); from < end;) {
+            for (let from = new Date(start); from < end; ) {
               //Set date range
               let to = new Date(from)
               to.setUTCHours(+6 * 4 * 7 * 24)
-              if (to > end)
-                to = end
+              if (to > end) to = end
               //Ensure that date ranges are not overlapping by setting it to previous day at 23:59:59.999
               const dto = new Date(to)
               dto.setUTCHours(-1)
@@ -113,10 +107,11 @@ export default async function({login, graphql, rest, data, q, queries, imports, 
               //Fetch data from api
               try {
                 console.debug(`metrics/compute/${login}/plugins > base > loading contributions collections for ${field} from "${from.toISOString()}" to "${dto.toISOString()}"`)
-                const {[account]: {contributionsCollection}} = await graphql(queries.base.contributions({login, account, field, range: `(from: "${from.toISOString()}", to: "${dto.toISOString()}")`}))
+                const {
+                  [account]: {contributionsCollection},
+                } = await graphql(queries.base.contributions({login, account, field, range: `(from: "${from.toISOString()}", to: "${dto.toISOString()}")`}))
                 collection[field] += contributionsCollection[field]
-              }
-              catch {
+              } catch {
                 console.debug(`metrics/compute/${login}/plugins > base > failed to load contributions collections for ${field} from "${from.toISOString()}" to "${dto.toISOString()}"`)
               }
               //Set next date range start
@@ -129,10 +124,11 @@ export default async function({login, graphql, rest, data, q, queries, imports, 
         else {
           try {
             console.debug(`metrics/compute/${login}/base > loading user commits history`)
-            const {data: {total_count: total = 0}} = await rest.search.commits({q: `author:${login}`})
+            const {
+              data: {total_count: total = 0},
+            } = await rest.search.commits({q: `author:${login}`})
             data.user.contributionsCollection.totalCommitContributions = Math.max(total, data.user.contributionsCollection.totalCommitContributions)
-          }
-          catch {
+          } catch {
             console.debug(`metrics/compute/${login}/base > falling back to last year commits history`)
           }
         }
@@ -143,7 +139,7 @@ export default async function({login, graphql, rest, data, q, queries, imports, 
         }
       }
       //Query repositories from GitHub API
-      for (const type of ({user: ["repositories", "repositoriesContributedTo"], organization: ["repositories"]}[account] ?? [])) {
+      for (const type of {user: ["repositories", "repositoriesContributedTo"], organization: ["repositories"]}[account] ?? []) {
         //Iterate through repositories
         let cursor = null
         let pushed = 0
@@ -155,8 +151,7 @@ export default async function({login, graphql, rest, data, q, queries, imports, 
           const request = {}
           try {
             Object.assign(request, await graphql(queries.base.repositories({login, account, type, after: cursor ? `after: "${cursor}"` : "", repositories: Math.min(repositories, {user: _batch, organization: Math.min(25, _batch)}[account]), ...options})))
-          }
-          catch (error) {
+          } catch (error) {
             console.debug(`metrics/compute/${login}/base > failed to retrieve ${_batch} repositories after ${cursor}, this is probably due to an API timeout, halving batch`)
             _batch = Math.floor(_batch / 2)
             if (_batch < 1) {
@@ -165,7 +160,9 @@ export default async function({login, graphql, rest, data, q, queries, imports, 
             }
             continue
           }
-          const {[account]: {[type]: {edges = [], nodes = []} = {}}} = request
+          const {
+            [account]: {[type]: {edges = [], nodes = []} = {}},
+          } = request
           cursor = edges?.[edges?.length - 1]?.cursor
           data.user[type].nodes.push(...nodes)
           pushed = nodes.length
@@ -174,8 +171,7 @@ export default async function({login, graphql, rest, data, q, queries, imports, 
             console.debug(`metrics/compute/${login}/base > retrieved less repositories than expected, probably no more to fetch`)
             break
           }
-        }
-        while ((pushed) && (cursor) && ((data.user.repositories?.nodes?.length ?? 0) + (data.user.repositoriesContributedTo?.nodes?.length ?? 0) < repositories))
+        } while (pushed && cursor && (data.user.repositories?.nodes?.length ?? 0) + (data.user.repositoriesContributedTo?.nodes?.length ?? 0) < repositories)
         //Limit repositories
         console.debug(`metrics/compute/${login}/base > keeping only ${repositories} ${type}`)
         data.user[type].nodes.splice(repositories)
@@ -187,8 +183,7 @@ export default async function({login, graphql, rest, data, q, queries, imports, 
         const {data: packages} = await rest.packages[{user: "listPackagesForUser", organization: "listPackagesForOrganization"}[account]]({package_type: "container", org: login, username: login})
         data.user.packages.totalCount += packages.length
         console.debug(`metrics/compute/${login}/base > patched packages count (added ${packages.length} from ghcr.io)`)
-      }
-      catch {
+      } catch {
         console.debug(`metrics/compute/${login}/base > failed to patch packages count, maybe read:packages scope was not provided`)
       }
       //Shared options
@@ -199,8 +194,7 @@ export default async function({login, graphql, rest, data, q, queries, imports, 
       console.debug(`metrics/compute/${login}/base > graphql query > account ${account} > success`)
       await callbacks?.plugin?.(login, "base", true, data).catch(error => console.debug(`metrics/compute/${login}/plugins/callbacks > base > ${error}`))
       return {}
-    }
-    catch (error) {
+    } catch (error) {
       console.debug(`metrics/compute/${login}/base > account ${account} > failed : ${error}`)
       if (/Could not resolve to a User with the login of/.test(error.message)) {
         console.debug(`metrics/compute/${login}/base > got a "user not found" error for account type "${account}" and user "${login}"`)
@@ -258,8 +252,7 @@ const postprocess = {
   skip({login, data, imports}) {
     data.user = {}
     data.shared = imports.metadata.plugins.base.inputs({data, q: {}, account: "bypass"})
-    for (const account of ["user", "organization"])
-      postprocess?.[account]({login, data})
+    for (const account of ["user", "organization"]) postprocess?.[account]({login, data})
     data.account = "bypass"
     Object.assign(data.user, {
       databaseId: NaN,
@@ -279,11 +272,8 @@ const postprocess = {
 //Legacy functions
 const legacy = {
   converter(value) {
-    if (/^(?:[Tt]rue|[Oo]n|[Yy]es|1)$/.test(value))
-      return true
-    if (/^(?:[Ff]alse|[Oo]ff|[Nn]o|0)$/.test(value))
-      return false
-    if (Number.isFinite(Number(value)))
-      return !!(Number(value))
+    if (/^(?:[Tt]rue|[Oo]n|[Yy]es|1)$/.test(value)) return true
+    if (/^(?:[Ff]alse|[Oo]ff|[Nn]o|0)$/.test(value)) return false
+    if (Number.isFinite(Number(value))) return !!Number(value)
   },
 }

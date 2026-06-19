@@ -59,18 +59,19 @@ for (const id of Object.keys(templates)) {
 
   //Readme
   console.log(`Generating source/templates/${id}/README.md`)
-  await fs.writeFile(
-    readme.path,
-    readme.content
-      .replace(/(<!--header-->)[\s\S]*(<!--\/header-->)/g, `$1\n${header}\n$2`)
-      .replace(/(<!--examples-->)[\s\S]*(<!--\/examples-->)/g, `$1\n${examples.map(({test, prod, ...step}) => ["```yaml", yaml.dump(step, {quotingType: '"', noCompatMode: true}), "```"].join("\n")).join("\n")}\n$2`),
-  )
+  await fs.writeFile(readme.path, readme.content.replace(/(<!--header-->)[\s\S]*(<!--\/header-->)/g, `$1\n${header}\n$2`).replace(/(<!--examples-->)[\s\S]*(<!--\/examples-->)/g, `$1\n${examples.map(({test, prod, ...step}) => ["```yaml", yaml.dump(step, {quotingType: '"', noCompatMode: true}), "```"].join("\n")).join("\n")}\n$2`))
   staged.add(readme.path)
 
   //Tests
   console.log(`Generating tests/templates/${id}.yml`)
   workflow.push(...examples.map(example => testcase(templates[id].name, "prod", example)).filter(t => t))
-  await fs.writeFile(tests.path, yaml.dump(examples.map(example => testcase(templates[id].name, "test", example)).filter(t => t), {quotingType: '"', noCompatMode: true}))
+  await fs.writeFile(
+    tests.path,
+    yaml.dump(
+      examples.map(example => testcase(templates[id].name, "test", example)).filter(t => t),
+      {quotingType: '"', noCompatMode: true},
+    ),
+  )
   staged.add(tests.path)
 }
 
@@ -134,7 +135,7 @@ async function plugin(id) {
     tests: {
       path: tests,
     },
-    examples: fss.existsSync(examples) ? yaml.load(await fs.readFile(examples), "utf8") ?? [] : [],
+    examples: fss.existsSync(examples) ? (yaml.load(await fs.readFile(examples), "utf8") ?? []) : [],
     options: plugins[id].readme.table,
     header: plugins[id].readme.header,
   }
@@ -154,7 +155,7 @@ async function template(id) {
     tests: {
       path: tests,
     },
-    examples: fss.existsSync(examples) ? yaml.load(await fs.readFile(examples), "utf8") ?? [] : [],
+    examples: fss.existsSync(examples) ? (yaml.load(await fs.readFile(examples), "utf8") ?? []) : [],
     header: templates[id].readme.header,
   }
 }
@@ -164,15 +165,13 @@ function testcase(name, env, args) {
   const {prod = {}, test = {}, ...step} = JSON.parse(JSON.stringify(args))
   const context = {prod, test}[env] ?? {}
   const {with: overrides} = context
-  if (context.skip)
-    return null
+  if (context.skip) return null
 
   Object.assign(step.with, context.with ?? {})
   delete context.with
   const result = {...step, ...context, name: `${name} - ${step.name ?? "(unnamed)"}`}
   for (const [k, v] of Object.entries(result.with)) {
-    if ((env === "test") && (secrets.$regex.test(v)))
-      result.with[k] = v.replace(secrets.$regex, secrets[v.match(secrets.$regex)?.groups?.secret])
+    if (env === "test" && secrets.$regex.test(v)) result.with[k] = v.replace(secrets.$regex, secrets[v.match(secrets.$regex)?.groups?.secret])
   }
 
   if (env === "prod") {
@@ -180,17 +179,17 @@ function testcase(name, env, args) {
     result.uses = "lowlighter/metrics@master"
     Object.assign(result.with, {output_action: "none", delay: 120})
 
-    for (const {property, value} of [{property: "user", value: "lowlighter"}, {property: "plugins_errors_fatal", value: "yes"}]) {
-      if (!(property in result.with))
-        result.with[property] = value
+    for (const {property, value} of [
+      {property: "user", value: "lowlighter"},
+      {property: "plugins_errors_fatal", value: "yes"},
+    ]) {
+      if (!(property in result.with)) result.with[property] = value
     }
-    if ((overrides?.output_action) && (overrides?.committer_branch === "examples"))
-      Object.assign(result.with, {output_action: overrides.output_action, committer_branch: "examples"})
+    if (overrides?.output_action && overrides?.committer_branch === "examples") Object.assign(result.with, {output_action: overrides.output_action, committer_branch: "examples"})
   }
 
   if (env === "test") {
-    if (!result.with.base)
-      delete result.with.base
+    if (!result.with.base) delete result.with.base
     delete result.with.filename
     Object.assign(result.with, {use_mocked_data: "yes", verify: "yes"})
   }

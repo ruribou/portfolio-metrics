@@ -1,11 +1,10 @@
 // @ts-nocheck -- TODO(ts): remove and type this plugin (staged migration)
 //Setup
-export default async function({login, data, graphql, rest, q, queries, imports, account}, {enabled = false, extras = false} = {}) {
+export default async function ({login, data, graphql, rest, q, queries, imports, account}, {enabled = false, extras = false} = {}) {
   //Plugin execution
   try {
     //Check if plugin is enabled and requirements are met
-    if ((!q.people) || (!imports.metadata.plugins.people.enabled(enabled, {extras})))
-      return null
+    if (!q.people || !imports.metadata.plugins.people.enabled(enabled, {extras})) return null
 
     //Context
     let context = {
@@ -24,8 +23,8 @@ export default async function({login, data, graphql, rest, q, queries, imports, 
     //Load inputs
     let {limit, types, size, identicons, "identicons.hide": _identicons_hide, thanks, shuffle, "sponsors.custom": _sponsors} = imports.metadata.plugins.people.inputs({data, account, q}, {types: context.default})
     //Filter types
-    types = [...new Set([...types].map(type => (context.alias[type] ?? type)).filter(type => context.types.includes(type)) ?? [])]
-    if ((types.includes("sponsorshipsAsMaintainer")) && (_sponsors?.length)) {
+    types = [...new Set([...types].map(type => context.alias[type] ?? type).filter(type => context.types.includes(type)) ?? [])]
+    if (types.includes("sponsorshipsAsMaintainer") && _sponsors?.length) {
       types.unshift("sponsorshipsCustom")
       data.user.sponsorshipsAsMaintainer.totalCount += _sponsors.length
     }
@@ -41,8 +40,7 @@ export default async function({login, data, graphql, rest, q, queries, imports, 
         const {owner, repo} = context
         const {data: nodes} = await rest.repos.listContributors({owner, repo})
         result[type].push(...nodes.map(({login, avatar_url}) => ({login, avatarUrl: avatar_url})))
-      }
-      else if ((type === "thanks") || (type === "sponsorshipsCustom")) {
+      } else if (type === "thanks" || type === "sponsorshipsCustom") {
         const users = {thanks, sponsorshipsCustom: _sponsors}[type] ?? []
         const nodes = await Promise.all(users.map(async username => (await rest.users.getByUsername({username})).data))
         result[{sponsorshipsCustom: "sponsorshipsAsMaintainer"}[type] ?? type].push(...nodes.map(({login, avatar_url}) => ({login, avatarUrl: avatar_url})))
@@ -53,16 +51,18 @@ export default async function({login, data, graphql, rest, q, queries, imports, 
         let pushed = 0
         do {
           console.debug(`metrics/compute/${login}/plugins > people > retrieving ${type} after ${cursor}`)
-          const {[type]: {edges}} = type in context.sponsorships
-            ? (await graphql(queries.people.sponsors({login: context.owner ?? login, type, size, after: cursor ? `after: "${cursor}"` : "", target: context.sponsorships[type], account})))[account]
-            : context.mode === "repository"
-            ? (await graphql(queries.people.repository({login: context.owner, repository: context.repo, type, size, after: cursor ? `after: "${cursor}"` : "", account})))[account].repository
-            : (await graphql(queries.people({login, type, size, after: cursor ? `after: "${cursor}"` : "", account})))[account]
+          const {
+            [type]: {edges},
+          } =
+            type in context.sponsorships
+              ? (await graphql(queries.people.sponsors({login: context.owner ?? login, type, size, after: cursor ? `after: "${cursor}"` : "", target: context.sponsorships[type], account})))[account]
+              : context.mode === "repository"
+                ? (await graphql(queries.people.repository({login: context.owner, repository: context.repo, type, size, after: cursor ? `after: "${cursor}"` : "", account})))[account].repository
+                : (await graphql(queries.people({login, type, size, after: cursor ? `after: "${cursor}"` : "", account})))[account]
           cursor = edges?.[edges?.length - 1]?.cursor
           result[type].push(...edges.map(({node}) => node[context.sponsorships[type]] ?? node))
           pushed = edges.length
-        }
-        while ((pushed) && (cursor) && ((limit === 0) || (result[type].length <= (shuffle ? 10 * limit : limit))))
+        } while (pushed && cursor && (limit === 0 || result[type].length <= (shuffle ? 10 * limit : limit)))
       }
       //Shuffle
       if (shuffle) {
@@ -82,11 +82,11 @@ export default async function({login, data, graphql, rest, q, queries, imports, 
       //Hide real avatar with identicons if enabled
       if (identicons) {
         console.debug(`metrics/compute/${login}/plugins > people > using identicons`)
-        result[type].map(user => user.avatarUrl = `https://github.com/identicons/${user.login}.png`)
+        result[type].map(user => (user.avatarUrl = `https://github.com/identicons/${user.login}.png`))
       }
       //Convert avatars to base64
       console.debug(`metrics/compute/${login}/plugins > people > loading avatars`)
-      await Promise.all(result[type].map(async user => user.avatar = await imports.imgb64(user.avatarUrl)))
+      await Promise.all(result[type].map(async user => (user.avatar = await imports.imgb64(user.avatarUrl))))
     }
 
     //Special type handling
@@ -99,9 +99,8 @@ export default async function({login, data, graphql, rest, q, queries, imports, 
 
     //Results
     return {types, size, ...result}
-  }
-  //Handle errors
-  catch (error) {
+  } catch (error) {
+    //Handle errors
     throw imports.format.error(error)
   }
 }

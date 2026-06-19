@@ -1,16 +1,16 @@
 // @ts-nocheck -- TODO(ts): remove and type this plugin (staged migration)
 //Imports
-import { Client as Gmap } from "@googlemaps/google-maps-services-js"
+import {Client as Gmap} from "@googlemaps/google-maps-services-js"
 import color from "color"
 import * as d3 from "d3"
-import { D3node } from "../../../app/metrics/utils.mts"
+import {D3node} from "../../../app/metrics/utils.mts"
 
 /**
  * Worldmap
  * Mostly ported from https://github.com/dyatko/worldstar
  * License: https://raw.githubusercontent.com/dyatko/worldstar/master/LICENSE
  */
-export default async function(login, {locations, sample, imports, token}) {
+export default async function (login, {locations, sample, imports, token}) {
   //Parse geocodes
   let stars = new Map()
   if (token) {
@@ -21,20 +21,20 @@ export default async function(login, {locations, sample, imports, token}) {
       console.debug(`metrics/compute/${login}/plugins > stargazers > worldmap > looking for ${location}`)
       if (!cache.has(location)) {
         try {
-          const {data: {results}} = await get.geocode({params: {address: location, key: token}})
+          const {
+            data: {results},
+          } = await get.geocode({params: {address: location, key: token}})
           const country = results.at(0).address_components.find(({types}) => types.includes("country"))
           cache.set(location, country.short_name ?? country.long_name)
           console.debug(`metrics/compute/${login}/plugins > stargazers > worldmap > ${location} resolved to ${cache.get(location)}`)
-        }
-        catch (error) {
+        } catch (error) {
           console.debug(`metrics/compute/${login}/plugins > stargazers > worldmap > failed to resolve ${location}: ${error}`)
         }
       }
       const code = cache.get(location)
       stars.set(code, (stars.get(code) ?? 0) + 1)
     }
-  }
-  else {
+  } else {
     throw {error: {message: "Google Maps API token is not set"}}
   }
 
@@ -51,9 +51,11 @@ export default async function(login, {locations, sample, imports, token}) {
     .join("path")
     .attr("id", ({id}) => id)
     .style("fill", ({properties: {iso_a2, wb_a2, sov_a3}}) => {
-      const code = iso_a2?.match(/[A-Z]{2}/) ? iso_a2 : wb_a2?.match(/[A-Z]{2}/) ? wb_a2 : sov_a3?.substr(0, 2) ?? ""
+      const code = iso_a2?.match(/[A-Z]{2}/) ? iso_a2 : wb_a2?.match(/[A-Z]{2}/) ? wb_a2 : (sov_a3?.substr(0, 2) ?? "")
       const value = stars.get(code)
-      return color("#216e39").mix(color("#ffffff"), 1 - Math.max(0, splits.indexOf(value)) / splits.length).hex()
+      return color("#216e39")
+        .mix(color("#ffffff"), 1 - Math.max(0, splits.indexOf(value)) / splits.length)
+        .hex()
     })
     .style("stroke", "#afafaf")
     .style("stroke-width", "0.6px")

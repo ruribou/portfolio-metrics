@@ -4,7 +4,7 @@ import fs from "fs/promises"
 import linguist from "linguist-js"
 import os from "os"
 import paths from "path"
-import { Analyzer } from "./analyzer.mts"
+import {Analyzer} from "./analyzer.mts"
 
 /**Indepth analyzer */
 export class IndepthAnalyzer extends Analyzer {
@@ -21,10 +21,8 @@ export class IndepthAnalyzer extends Analyzer {
     return super.run(async () => {
       await this.gpgarmor()
       for (const repository of repositories) {
-        if (this.results.partial.global)
-          break
-        if (this.ignore(repository))
-          continue
+        if (this.results.partial.global) break
+        if (this.ignore(repository)) continue
         if (await this.clone(repository)) {
           const {path, ref} = this.parse(repository)
           await this.analyze(path, {ref})
@@ -59,8 +57,7 @@ export class IndepthAnalyzer extends Analyzer {
         }
       }
       this.debug(`fetched ${this.gpg.length} gpg keys`)
-    }
-    catch (error) {
+    } catch (error) {
       this.debug(`an error occurred while fetching gpg keys (${error})`)
     }
 
@@ -74,15 +71,12 @@ export class IndepthAnalyzer extends Analyzer {
         if (process.env.GITHUB_ACTIONS) {
           this.debug(`importing gpg ${id}`)
           await this.shell.run(`gpg --import ${path}`)
-        }
-        else {
+        } else {
           this.debug("skipping import of gpg keys as we are not in GitHub Actions environment")
         }
-      }
-      catch (error) {
+      } catch (error) {
         this.debug(`an error occurred while importing gpg ${id}, skipping...`)
-      }
-      finally {
+      } finally {
         this.debug(`cleaning ${path}`)
         await fs.rm(path, {recursive: true, force: true}).catch(error => this.debug(`failed to clean ${path} (${error})`))
       }
@@ -98,14 +92,20 @@ export class IndepthAnalyzer extends Analyzer {
         //Search by --author
         {
           const output = await this.shell.run(`git log --author='${author}' --pretty=format:"%H" --regexp-ignore-case --no-merges`, {cwd: path, env: {LANG: "en_GB"}}, {log: false, debug: false, prefixed: false})
-          const hashes = output.split("\n").map(line => line.trim()).filter(line => this.markers.hash.test(line))
+          const hashes = output
+            .split("\n")
+            .map(line => line.trim())
+            .filter(line => this.markers.hash.test(line))
           hashes.forEach(hash => commits.add(hash))
           this.debug(`found ${hashes.length} for ${author} (using --author)`)
         }
         //Search by --grep
         {
           const output = await this.shell.run(`git log --grep='${author}' --pretty=format:"%H"  --regexp-ignore-case --no-merges`, {cwd: path, env: {LANG: "en_GB"}}, {log: false, debug: false, prefixed: false})
-          const hashes = output.split("\n").map(line => line.trim()).filter(line => this.markers.hash.test(line))
+          const hashes = output
+            .split("\n")
+            .map(line => line.trim())
+            .filter(line => this.markers.hash.test(line))
           hashes.forEach(hash => commits.add(hash))
           this.debug(`found ${hashes.length} for ${author} (using --grep)`)
         }
@@ -114,12 +114,14 @@ export class IndepthAnalyzer extends Analyzer {
       if (ref) {
         this.debug(`filtering commits referenced by ${ref} in ${path}`)
         const output = await this.shell.run(`git rev-list --boundary ${ref}`, {cwd: path, env: {LANG: "en_GB"}}, {log: false, debug: false, prefixed: false})
-        const hashes = output.split("\n").map(line => line.trim()).filter(line => this.markers.hash.test(line))
-        commits.forEach(commit => !hashes.includes(commit) ? commits.delete(commit) : null)
+        const hashes = output
+          .split("\n")
+          .map(line => line.trim())
+          .filter(line => this.markers.hash.test(line))
+        commits.forEach(commit => (!hashes.includes(commit) ? commits.delete(commit) : null))
       }
       this.debug(`found ${commits.size} unique commits authored by ${this.login} in ${path}`)
-    }
-    catch (error) {
+    } catch (error) {
       this.debug(`an error occurred during filtering of commits authored by ${this.login} in ${path} (${error})`)
     }
     return [...commits]
@@ -134,11 +136,16 @@ export class IndepthAnalyzer extends Analyzer {
         commits.push({
           sha,
           name: await this.shell.run(`git log ${sha} --format="%s (authored by %an on %cI)" --max-count=1`, {cwd: path, env: {LANG: "en_GB"}}, {log: false, debug: false, prefixed: false}),
-          verified: ("verified" in this.results) ? await this.shell.run(`git verify-commit ${sha}`, {cwd: path, env: {LANG: "en_GB"}}, {log: false, debug: false, prefixed: false}).then(() => true).catch(() => null) : null,
+          verified:
+            "verified" in this.results
+              ? await this.shell
+                  .run(`git verify-commit ${sha}`, {cwd: path, env: {LANG: "en_GB"}}, {log: false, debug: false, prefixed: false})
+                  .then(() => true)
+                  .catch(() => null)
+              : null,
           editions: await this.editions(path, {sha}),
         })
-      }
-      catch (error) {
+      } catch (error) {
         this.debug(`skipping commit ${sha} (${error})`)
       }
     }
@@ -150,40 +157,43 @@ export class IndepthAnalyzer extends Analyzer {
     const editions = []
     let edition = null
     let cursor = 0
-    await this.shell.spawn("git", ["log", sha, "--format=''", "--max-count=1", "--patch"], {cwd: path, env: {LANG: "en_GB"}}, {
-      debug: false,
-      stdout: line => {
-        try {
-          //Ignore empty lines or unneeded lines
-          cursor++
-          if ((!/^[-+]/.test(line)) || (!line.trim().length))
-            return
+    await this.shell.spawn(
+      "git",
+      ["log", sha, "--format=''", "--max-count=1", "--patch"],
+      {cwd: path, env: {LANG: "en_GB"}},
+      {
+        debug: false,
+        stdout: line => {
+          try {
+            //Ignore empty lines or unneeded lines
+            cursor++
+            if (!/^[-+]/.test(line) || !line.trim().length) return
 
-          //File marker
-          if (this.markers.file.test(line)) {
-            edition = {
-              path: `${path}/${line.match(this.markers.file)?.groups?.file}`.replace(/\\/g, "/"),
-              added: {lines: 0, bytes: 0},
-              deleted: {lines: 0, bytes: 0},
+            //File marker
+            if (this.markers.file.test(line)) {
+              edition = {
+                path: `${path}/${line.match(this.markers.file)?.groups?.file}`.replace(/\\/g, "/"),
+                added: {lines: 0, bytes: 0},
+                deleted: {lines: 0, bytes: 0},
+              }
+              editions.push(edition)
+              return
             }
-            editions.push(edition)
-            return
-          }
 
-          //Line markers
-          if ((edition) && (this.markers.line.test(line))) {
-            const {op = "+", content = ""} = line.match(this.markers.line)?.groups ?? {}
-            const size = Buffer.byteLength(content, "utf-8")
-            edition[{"+": "added", "-": "deleted"}[op]].bytes += size
-            edition[{"+": "added", "-": "deleted"}[op]].lines++
-            return
+            //Line markers
+            if (edition && this.markers.line.test(line)) {
+              const {op = "+", content = ""} = line.match(this.markers.line)?.groups ?? {}
+              const size = Buffer.byteLength(content, "utf-8")
+              edition[{"+": "added", "-": "deleted"}[op]].bytes += size
+              edition[{"+": "added", "-": "deleted"}[op]].lines++
+              return
+            }
+          } catch (error) {
+            this.debug(`skipping line ${sha}#${cursor} (${error})`)
           }
-        }
-        catch (error) {
-          this.debug(`skipping line ${sha}#${cursor} (${error})`)
-        }
+        },
       },
-    })
+    )
     return editions
   }
 
@@ -202,16 +212,18 @@ export class IndepthAnalyzer extends Analyzer {
       edited.add(edition.path)
 
       //Guess file language with linguist (only run it once per sha)
-      if ((!(edition.path in cache.files)) && (!seen.has(commit.sha))) {
+      if (!(edition.path in cache.files) && !seen.has(commit.sha)) {
         this.debug(`language for file ${edition.path} is not in cache, running linguist at ${commit.sha}`)
         await this.shell.run(`git checkout ${commit.sha}`, {cwd: path, env: {LANG: "en_GB"}}, {log: false, debug: false, prefixed: false})
-        const {files: {results: files}, languages: {results: languages}} = await linguist(path)
+        const {
+          files: {results: files},
+          languages: {results: languages},
+        } = await linguist(path)
         Object.assign(cache.files, files)
         Object.assign(cache.languages, languages)
         seen.add(commit.sha)
       }
-      if (!(edition.path in cache.files))
-        cache.files[edition.path] = "<unknown>"
+      if (!(edition.path in cache.files)) cache.files[edition.path] = "<unknown>"
 
       //Aggregate statistics
       const language = cache.files[edition.path]
@@ -220,8 +232,7 @@ export class IndepthAnalyzer extends Analyzer {
       if (language === "<unknown>") {
         result.missed.lines += edition.added.lines
         result.missed.bytes += edition.added.bytes
-      }
-      else {
+      } else {
         result.lines[language] = (result.lines[language] ?? 0) + edition.added.lines
         result.stats[language] = (result.stats[language] ?? 0) + edition.added.bytes
       }

@@ -15,7 +15,13 @@ console.log(`Mode: ${mode}`)
 const __metrics = paths.join(paths.dirname(url.fileURLToPath(import.meta.url)), "../..")
 const __presets = paths.join(__metrics, ".presets")
 
-if ((!await fs.access(__presets).then(_ => true).catch(_ => false)) || (!(await fs.lstat(__presets)).isDirectory()))
+if (
+  !(await fs
+    .access(__presets)
+    .then(_ => true)
+    .catch(_ => false)) ||
+  !(await fs.lstat(__presets)).isDirectory()
+)
   await sgit().clone(`https://github-actions[bot]:${process.env.GITHUB_TOKEN}@github.com/lowlighter/metrics`, __presets, {"--branch": "presets", "--single-branch": true})
 const git = sgit(__presets)
 await git.pull()
@@ -28,7 +34,7 @@ web.start = async () =>
   new Promise(solve => {
     let stdout = ""
     web.instance = processes.spawn("node", ["--import", "tsx", "source/app/web/index.mts"], {env: {...process.env, SANDBOX: true}})
-    web.instance.stdout.on("data", data => (stdout += data, /Server ready !/.test(stdout) ? solve() : null))
+    web.instance.stdout.on("data", data => ((stdout += data), /Server ready !/.test(stdout) ? solve() : null))
     web.instance.stderr.on("data", data => console.error(`${data}`))
   })
 web.stop = async () => await web.instance.kill("SIGKILL")
@@ -36,10 +42,8 @@ web.stop = async () => await web.instance.kill("SIGKILL")
 //Generate presets examples
 await web.start()
 for (const path of await fs.readdir(__presets)) {
-  if (/^[.@]/.test(path))
-    continue
-  if (!(await fs.lstat(paths.join(__presets, path))).isDirectory())
-    continue
+  if (/^[.@]/.test(path)) continue
+  if (!(await fs.lstat(paths.join(__presets, path))).isDirectory()) continue
   const preset = path
 
   //Example

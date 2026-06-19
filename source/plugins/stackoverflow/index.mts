@@ -1,16 +1,14 @@
 // @ts-nocheck -- TODO(ts): remove and type this plugin (staged migration)
 //Setup
-export default async function({login, q, imports, data, account}, {enabled = false, extras = false} = {}) {
+export default async function ({login, q, imports, data, account}, {enabled = false, extras = false} = {}) {
   //Plugin execution
   try {
     //Check if plugin is enabled and requirements are met
-    if ((!q.stackoverflow) || (!imports.metadata.plugins.stackoverflow.enabled(enabled, {extras})))
-      return null
+    if (!q.stackoverflow || !imports.metadata.plugins.stackoverflow.enabled(enabled, {extras})) return null
 
     //Load inputs
     let {sections, user, limit, lines, "lines.snippet": codelines} = imports.metadata.plugins.stackoverflow.inputs({data, account, q})
-    if (!user)
-      throw {error: {message: "Stack Overflow user id is not set"}}
+    if (!user) throw {error: {message: "Stack Overflow user id is not set"}}
 
     //Initialization
     //See https://api.stackexchange.com/docs
@@ -22,49 +20,76 @@ export default async function({login, q, imports, data, account}, {enabled = fal
     {
       //Account metrics
       console.debug(`metrics/compute/${login}/plugins > stackoverflow > querying api for user ${user}`)
-      const {data: {items: [{reputation, badge_counts: {bronze, silver, gold}, answer_count: answers, question_count: questions, view_count: views}]}} = await imports.axios.get(`${api.user}?site=stackoverflow&filter=${filters.user}`)
-      const {data: {total: comments}} = await imports.axios.get(`${api.user}/comments?site=stackoverflow&filter=total`)
+      const {
+        data: {
+          items: [
+            {
+              reputation,
+              badge_counts: {bronze, silver, gold},
+              answer_count: answers,
+              question_count: questions,
+              view_count: views,
+            },
+          ],
+        },
+      } = await imports.axios.get(`${api.user}?site=stackoverflow&filter=${filters.user}`)
+      const {
+        data: {total: comments},
+      } = await imports.axios.get(`${api.user}/comments?site=stackoverflow&filter=total`)
       //Save result
       result.user = {id: user, reputation, badges: bronze + silver + gold, questions, answers, comments, views}
     }
 
     //Answers
-    for (const {key, sort} of [{key: "answers-recent", sort: "sort=activity&order=desc"}, {key: "answers-top", sort: "sort=votes&order=desc"}].filter(({key}) => sections.includes(key))) {
+    for (const {key, sort} of [
+      {key: "answers-recent", sort: "sort=activity&order=desc"},
+      {key: "answers-top", sort: "sort=votes&order=desc"},
+    ].filter(({key}) => sections.includes(key))) {
       //Load and format answers
       console.debug(`metrics/compute/${login}/plugins > stackoverflow > querying api for ${key}`)
-      const {data: {items}} = await imports.axios.get(`${api.user}/answers?site=stackoverflow&pagesize=${limit}&filter=${filters.answer}&${sort}`)
+      const {
+        data: {items},
+      } = await imports.axios.get(`${api.user}/answers?site=stackoverflow&pagesize=${limit}&filter=${filters.answer}&${sort}`)
       result[key] = await Promise.all(items.map(item => format.answer(item, {imports, codelines})))
       console.debug(`metrics/compute/${login}/plugins > stackoverflow > loaded ${result[key].length} items`)
       //Load related questions
       const ids = result[key].map(({question_id}) => question_id).filter(id => id)
       if (ids) {
         console.debug(`metrics/compute/${login}/plugins > stackoverflow > loading ${ids.length} related items`)
-        const {data: {items}} = await imports.axios.get(`${api.base}/questions/${ids.join(";")}?site=stackoverflow&filter=${filters.question}`)
+        const {
+          data: {items},
+        } = await imports.axios.get(`${api.base}/questions/${ids.join(";")}?site=stackoverflow&filter=${filters.question}`)
         await Promise.all(items.map(item => format.question(item, {imports, codelines})))
       }
     }
 
     //Questions
-    for (const {key, sort} of [{key: "questions-recent", sort: "sort=activity&order=desc"}, {key: "questions-top", sort: "sort=votes&order=desc"}].filter(({key}) => sections.includes(key))) {
+    for (const {key, sort} of [
+      {key: "questions-recent", sort: "sort=activity&order=desc"},
+      {key: "questions-top", sort: "sort=votes&order=desc"},
+    ].filter(({key}) => sections.includes(key))) {
       //Load and format questions
       console.debug(`metrics/compute/${login}/plugins > stackoverflow > querying api for ${key}`)
-      const {data: {items}} = await imports.axios.get(`${api.user}/questions?site=stackoverflow&pagesize=${limit}&filter=${filters.question}&${sort}`)
+      const {
+        data: {items},
+      } = await imports.axios.get(`${api.user}/questions?site=stackoverflow&pagesize=${limit}&filter=${filters.question}&${sort}`)
       result[key] = await Promise.all(items.map(item => format.question(item, {imports, codelines})))
       console.debug(`metrics/compute/${login}/plugins > stackoverflow > loaded ${result[key].length} items`)
       //Load related answers
       const ids = result[key].map(({accepted_answer_id}) => accepted_answer_id).filter(id => id)
       if (ids) {
         console.debug(`metrics/compute/${login}/plugins > stackoverflow > loading ${ids.length} related items`)
-        const {data: {items}} = await imports.axios.get(`${api.base}/answers/${ids.join(";")}?site=stackoverflow&filter=${filters.answer}`)
+        const {
+          data: {items},
+        } = await imports.axios.get(`${api.base}/answers/${ids.join(";")}?site=stackoverflow&filter=${filters.answer}`)
         await Promise.all(items.map(item => format.answer(item, {imports, codelines})))
       }
     }
 
     //Results
     return result
-  }
-  //Handle errors
-  catch (error) {
+  } catch (error) {
+    //Handle errors
     throw imports.format.error(error)
   }
 }
@@ -100,27 +125,7 @@ const format = {
     return formatted
   },
   /**Format questions */
-  async question(
-    {
-      title,
-      body_markdown: body,
-      score,
-      up_vote_count: upvotes,
-      down_vote_count: downvotes,
-      favorite_count: favorites,
-      tags,
-      is_answered: answered,
-      answer_count: answers,
-      comment_count: comments = 0,
-      view_count: views,
-      creation_date,
-      owner: {display_name: author},
-      link,
-      question_id: id,
-      accepted_answer_id = null,
-    },
-    {imports, codelines},
-  ) {
+  async question({title, body_markdown: body, score, up_vote_count: upvotes, down_vote_count: downvotes, favorite_count: favorites, tags, is_answered: answered, answer_count: answers, comment_count: comments = 0, view_count: views, creation_date, owner: {display_name: author}, link, question_id: id, accepted_answer_id = null}, {imports, codelines}) {
     const formatted = {
       type: "question",
       title: await imports.markdown(title),

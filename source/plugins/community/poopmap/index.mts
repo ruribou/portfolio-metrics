@@ -1,17 +1,17 @@
 // @ts-nocheck -- TODO(ts): remove and type this plugin (staged migration)
 //Setup
-export default async function({q, imports, data, account}, {enabled = false, token = "", extras = false} = {}) {
+export default async function ({q, imports, data, account}, {enabled = false, token = "", extras = false} = {}) {
   //Plugin execution
   try {
     //Check if plugin is enabled and requirements are met
-    if ((!q.poopmap) || (!imports.metadata.plugins.poopmap.enabled(enabled, {extras})))
-      return null
+    if (!q.poopmap || !imports.metadata.plugins.poopmap.enabled(enabled, {extras})) return null
 
-    if (!token)
-      return {poops: [], days: 7}
+    if (!token) return {poops: [], days: 7}
 
     const {days} = imports.metadata.plugins.poopmap.inputs({data, account, q})
-    const {data: {poops}} = await imports.axios.get(`https://api.poopmap.net/api/v1/public_links/${token}`)
+    const {
+      data: {poops},
+    } = await imports.axios.get(`https://api.poopmap.net/api/v1/public_links/${token}`)
 
     const filteredPoops = poops.filter(poop => {
       const createdAt = new Date(poop.created_at)
@@ -30,9 +30,8 @@ export default async function({q, imports, data, account}, {enabled = false, tok
 
     //Results
     return {poops: hours, days}
-  }
-  //Handle errors
-  catch (error) {
+  } catch (error) {
+    //Handle errors
     throw imports.format.error(error)
   }
 }

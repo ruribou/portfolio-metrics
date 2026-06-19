@@ -1,16 +1,14 @@
 // @ts-nocheck -- TODO(ts): remove and type this plugin (staged migration)
 //Setup
-export default async function({login, q, imports, data, account}, {enabled = false, extras = false} = {}) {
+export default async function ({login, q, imports, data, account}, {enabled = false, extras = false} = {}) {
   //Plugin execution
   try {
     //Check if plugin is enabled and requirements are met
-    if ((!q.screenshot) || (!imports.metadata.plugins.screenshot.enabled(enabled, {extras})))
-      return null
+    if (!q.screenshot || !imports.metadata.plugins.screenshot.enabled(enabled, {extras})) return null
 
     //Load inputs
     let {url, selector, title, background, viewport, wait, mode} = imports.metadata.plugins.screenshot.inputs({data, account, q})
-    if (!url)
-      throw {error: {message: "URL is not set"}}
+    if (!url) throw {error: {message: "URL is not set"}}
 
     //Start puppeteer and navigate to page
     console.debug(`metrics/compute/${login}/plugins > screenshot > starting browser`)
@@ -20,8 +18,7 @@ export default async function({login, q, imports, data, account}, {enabled = fal
     await page.setViewport(viewport)
     console.debug(`metrics/compute/${login}/plugins > screenshot > loading ${url}`)
     await page.goto(url, {waitUntil: ["domcontentloaded", "networkidle2"]})
-    if (wait)
-      await new Promise(solve => setTimeout(solve, wait))
+    if (wait) await new Promise(solve => setTimeout(solve, wait))
 
     //Screenshot
     let content = null
@@ -53,9 +50,8 @@ export default async function({login, q, imports, data, account}, {enabled = fal
 
     //Results
     return {mode, image, content, title, height: metadata.height, width: metadata.width, url}
-  }
-  //Handle errors
-  catch (error) {
+  } catch (error) {
+    //Handle errors
     throw imports.format.error(error, {title: "Screenshot error"})
   }
 }

@@ -9,7 +9,9 @@ export default async function presets(list, {log = true, core = null} = {}) {
   const {plugins} = await metadata({log: false})
   const {"config.presets": files} = (plugins as any).core.inputs({q: {"config.presets": list}, account: "bypass"})
   const logger = log ? console.debug : () => null
-  const allowed = Object.entries((metadata as any).inputs).filter(([_, {type, preset}]: [string, any]) => (type !== "token") && (!/^(?:[Ff]alse|[Oo]ff|[Nn]o|0)$/.test(preset))).map(([key]) => key)
+  const allowed = Object.entries((metadata as any).inputs)
+    .filter(([_, {type, preset}]: [string, any]) => type !== "token" && !/^(?:[Ff]alse|[Oo]ff|[Nn]o|0)$/.test(preset))
+    .map(([key]) => key)
   const env = core ? "action" : "web"
   const options = {}
 
@@ -22,16 +24,13 @@ export default async function presets(list, {log = true, core = null} = {}) {
       if (file.startsWith("@")) {
         logger(`metrics/presets > ${file} seems to be predefined preset, fetching`)
         text = await fetch(`https://raw.githubusercontent.com/lowlighter/metrics/presets/${file.substring(1)}/preset.yml`).then(response => response.text())
-      }
-      else if (file.startsWith("https://")) {
+      } else if (file.startsWith("https://")) {
         logger(`metrics/presets > ${file} seems to be an url, fetching`)
         text = await fetch(file).then(response => response.text())
-      }
-      else if (env === "action") {
+      } else if (env === "action") {
         logger(`metrics/presets > ${file} seems to be a local file, reading`)
         text = `${await fs.readFile(file)}`
-      }
-      else {
+      } else {
         logger(`metrics/presets > ${file} cannot be loaded in current environment ${env}, skipping`)
         continue
       }
@@ -46,10 +45,8 @@ export default async function presets(list, {log = true, core = null} = {}) {
               logger(`metrics/presets > ${key} is specified but is not allowed in preset, skipping`)
               continue
             }
-            if (env === "web")
-              key = (metadata as any).to.query(key)
-            if (key in options)
-              logger(`metrics/presets > ${key} was already specified by another preset, overwriting`)
+            if (env === "web") key = (metadata as any).to.query(key)
+            if (key in options) logger(`metrics/presets > ${key} was already specified by another preset, overwriting`)
             options[key] = value
           }
           break
@@ -57,11 +54,9 @@ export default async function presets(list, {log = true, core = null} = {}) {
         default:
           throw new Error(`unsupported preset schema: ${schema}`)
       }
-    }
-    //Handle errors
-    catch (error) {
-      if (env === "action")
-        console.log(`::warning::skipping preset ${file}: ${error.message}`)
+    } catch (error) {
+      //Handle errors
+      if (env === "action") console.log(`::warning::skipping preset ${file}: ${error.message}`)
       logger(`metrics/presets > an error occurred while loading preset ${file} (${error}), ignoring`)
     }
   }

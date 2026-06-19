@@ -23,9 +23,23 @@ const templates = Object.entries(Templates).map(([name]) => ({name, enabled: tru
 const metadata = Object.fromEntries(
   Object.entries(conf.metadata.plugins)
     .map(([key, value]) => [key, Object.fromEntries(Object.entries(value).filter(([key]) => ["name", "icon", "category", "web", "supports", "scopes"].includes(key)))])
-    .map(([key, value]) => [key, key === "core" ? {...value, web: Object.fromEntries(Object.entries(value.web).filter(([key]) => /^config[.]/.test(key)).map(([key, value]) => [key.replace(/^config[.]/, ""), value]))} : value]),
+    .map(([key, value]) => [
+      key,
+      key === "core"
+        ? {
+            ...value,
+            web: Object.fromEntries(
+              Object.entries(value.web)
+                .filter(([key]) => /^config[.]/.test(key))
+                .map(([key, value]) => [key.replace(/^config[.]/, ""), value]),
+            ),
+          }
+        : value,
+    ]),
 )
-const enabled = Object.entries(metadata).filter(([_name, {category}]) => category !== "core").map(([name]) => ({name, category: metadata[name]?.category ?? "community", enabled: true}))
+const enabled = Object.entries(metadata)
+  .filter(([_name, {category}]) => category !== "core")
+  .map(([name]) => ({name, category: metadata[name]?.category ?? "community", enabled: true}))
 
 //Directories
 await fs.mkdir(__preview, {recursive: true})
@@ -48,8 +62,7 @@ for (const template in conf.templates) {
   const __partials = paths.join(__templates, template, "partials")
   const __preview_partials = paths.join(__preview_templates, template, "partials")
   await fs.mkdir(__preview_partials, {recursive: true})
-  for (const file of await fs.readdir(__partials))
-    fs.copyFile(paths.join(__partials, file), paths.join(__preview_partials, file))
+  for (const file of await fs.readdir(__partials)) fs.copyFile(paths.join(__partials, file), paths.join(__preview_partials, file))
 }
 //Styles
 fs.copyFile(paths.join(__web, "style.css"), paths.join(__preview_css, "style.css"))
@@ -62,8 +75,7 @@ fs.writeFile(paths.join(__preview_js, "faker.min.js"), "import {faker} from '/.j
 for (const path of [[], ["locale"]]) {
   await fs.mkdir(paths.join(__preview_js, "faker", ...path), {recursive: true})
   for (const file of await fs.readdir(paths.join(__node_modules, "@faker-js/faker/dist/esm", ...path))) {
-    if (file.endsWith(".mjs"))
-      fs.copyFile(paths.join(__node_modules, "@faker-js/faker/dist/esm", ...path, file), paths.join(__preview_js, "faker", ...path, file))
+    if (file.endsWith(".mjs")) fs.copyFile(paths.join(__node_modules, "@faker-js/faker/dist/esm", ...path, file), paths.join(__preview_js, "faker", ...path, file))
   }
 }
 fs.copyFile(paths.join(__node_modules, "axios/dist/axios.min.js"), paths.join(__preview_js, "axios.min.js"))
@@ -92,8 +104,7 @@ fs.writeFile(paths.join(__preview, ".hosted"), JSON.stringify({by: "metrics", li
   fs.writeFile(paths.join(__preview_embed, "index.html"), `${await fs.readFile(paths.join(__web_embed, "index.html"))}`)
   fs.writeFile(paths.join(__preview_embed_js, "app.js"), `${await fs.readFile(paths.join(__web_embed, "app.js"))}`)
   fs.writeFile(paths.join(__preview_embed_js, "app.placeholder.js"), `${await fs.readFile(paths.join(__web_embed, "app.placeholder.js"))}`)
-  for (const file of await fs.readdir(__web_embed_placeholders))
-    fs.copyFile(paths.join(__web_embed_placeholders, file), paths.join(__preview_embed_placeholders, file))
+  for (const file of await fs.readdir(__web_embed_placeholders)) fs.copyFile(paths.join(__web_embed_placeholders, file), paths.join(__preview_embed_placeholders, file))
 }
 //Insights
 for (const insights of ["insights", "about"]) {
@@ -102,7 +113,6 @@ for (const insights of ["insights", "about"]) {
   await fs.mkdir(__preview_insights, {recursive: true})
   fs.copyFile(paths.join(__web_insights, "index.html"), paths.join(__preview, insights, "index.html"))
   for (const file of await fs.readdir(__web_insights)) {
-    if (file !== ".statics")
-      fs.copyFile(paths.join(__web_insights, file), paths.join(__preview_insights, file))
+    if (file !== ".statics") fs.copyFile(paths.join(__web_insights, file), paths.join(__preview_insights, file))
   }
 }

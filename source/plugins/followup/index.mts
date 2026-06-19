@@ -1,11 +1,10 @@
 // @ts-nocheck -- TODO(ts): remove and type this plugin (staged migration)
 //Setup
-export default async function({login, data, computed, imports, q, graphql, queries, account}, {enabled = false, extras = false} = {}) {
+export default async function ({login, data, computed, imports, q, graphql, queries, account}, {enabled = false, extras = false} = {}) {
   //Plugin execution
   try {
     //Check if plugin is enabled and requirements are met
-    if ((!q.followup) || (!imports.metadata.plugins.followup.enabled(enabled, {extras})))
-      return null
+    if (!q.followup || !imports.metadata.plugins.followup.enabled(enabled, {extras})) return null
 
     //Load inputs
     let {sections, indepth, archived} = imports.metadata.plugins.followup.inputs({data, account, q})
@@ -58,17 +57,24 @@ export default async function({login, data, computed, imports, q, graphql, queri
     }
 
     //Indepth mode
-    if ((indepth) && (imports.metadata.plugins.followup.extras("indepth", {extras}))) {
+    if (indepth && imports.metadata.plugins.followup.extras("indepth", {extras})) {
       console.debug(`metrics/compute/${login}/plugins > followup > indepth`)
       followup.indepth = {repositories: {}}
 
       //Process repositories
-      for (const {name: repo, owner: {login: owner}} of data.user.repositories.nodes) {
+      for (const {
+        name: repo,
+        owner: {login: owner},
+      } of data.user.repositories.nodes) {
         try {
           console.debug(`metrics/compute/${login}/plugins > followup > processing ${owner}/${repo}`)
           followup.indepth.repositories[`${owner}/${repo}`] = {stats: {}}
           //Fetch users with push access
-          let {repository: {collaborators: {nodes: collaborators}}} = await graphql(queries.followup["repository.collaborators"]({repo, owner})).catch(() => ({repository: {collaborators: {nodes: [{login: owner}]}}}))
+          let {
+            repository: {
+              collaborators: {nodes: collaborators},
+            },
+          } = await graphql(queries.followup["repository.collaborators"]({repo, owner})).catch(() => ({repository: {collaborators: {nodes: [{login: owner}]}}}))
           console.debug(`metrics/compute/${login}/plugins > followup > found ${collaborators.length} collaborators`)
           followup.indepth.repositories[`${owner}/${repo}`].collaborators = collaborators.map(({login}) => login)
           //Fetch issues and pull requests created by collaborators
@@ -80,8 +86,7 @@ export default async function({login, data, computed, imports, q, graphql, queri
             const [section, type] = key.split("_")
             followup[section].collaborators[type] += count
           }
-        }
-        catch (error) {
+        } catch (error) {
           console.debug(error)
           console.debug(`metrics/compute/${login}/plugins > followup > an error occurred while processing ${owner}/${repo}, skipping...`)
         }
@@ -89,7 +94,7 @@ export default async function({login, data, computed, imports, q, graphql, queri
     }
 
     //Load user issues and pull requests
-    if ((account === "user") && (sections.includes("user"))) {
+    if (account === "user" && sections.includes("user")) {
       const search = await graphql(queries.followup.user({login, archived}))
       followup.user = {
         issues: {
@@ -115,9 +120,8 @@ export default async function({login, data, computed, imports, q, graphql, queri
 
     //Results
     return followup
-  }
-  //Handle errors
-  catch (error) {
+  } catch (error) {
+    //Handle errors
     throw imports.format.error(error)
   }
 }

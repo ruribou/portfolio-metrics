@@ -1,6 +1,6 @@
 // @ts-nocheck -- TODO(ts): remove and type this (staged migration)
 /**Template processor */
-export default async function({login, q}, {data, rest, graphql, queries, account}, {pending, imports}) {
+export default async function ({login, q}, {data, rest, graphql, queries, account}, {pending, imports}) {
   //Check arguments
   const {repo} = q
   if (!repo) {
@@ -12,7 +12,9 @@ export default async function({login, q}, {data, rest, graphql, queries, account
 
   //Retrieving single repository
   console.debug(`metrics/compute/${login}/${repo} > retrieving single repository ${repo}`)
-  const {[account === "bypass" ? "user" : account]: {repository}} = await graphql(queries.base.repository({login, repo, account}))
+  const {
+    [account === "bypass" ? "user" : account]: {repository},
+  } = await graphql(queries.base.repository({login, repo, account}))
   data.user.repositories.nodes = [repository]
   data.user.repositoriesContributedTo.nodes = []
   data.repo = repository
@@ -33,10 +35,8 @@ export default async function({login, q}, {data, rest, graphql, queries, account
         break
       }
       commits.push(...data)
-    }
-    catch (error) {
-      if (/Git Repository is empty/.test(error))
-        break
+    } catch (error) {
+      if (/Git Repository is empty/.test(error)) break
       throw error
     }
   }
@@ -55,8 +55,7 @@ export default async function({login, q}, {data, rest, graphql, queries, account
   const contributions = commits.map(({commit}) => Math.abs(Math.ceil((now - new Date(commit.committer.date)) / (24 * 60 * 60 * 1000))))
   //Count contributions per relative day
   const calendar = new Array(days).fill(0)
-  for (const day of contributions)
-    calendar[day]++
+  for (const day of contributions) calendar[day]++
   calendar.splice(days)
   const max = Math.max(...calendar)
   //Override contributions calendar
@@ -69,11 +68,12 @@ export default async function({login, q}, {data, rest, graphql, queries, account
   try {
     if (await rest.repos.getContent({owner: login, repo, path: "action.yml"})) {
       console.debug(`metrics/compute/${login}/${repo} > this repository seems to be a GitHub action, fetching users using code search`)
-      const {data: {total_count}} = await rest.search.code({q: `uses ${login} ${repo} path:.github/workflows language:YAML`})
+      const {
+        data: {total_count},
+      } = await rest.search.code({q: `uses ${login} ${repo} path:.github/workflows language:YAML`})
       data.repo.actionUsersCount = total_count
     }
-  }
-  catch {
+  } catch {
     //Ignore errors
   }
 
@@ -85,6 +85,5 @@ export default async function({login, q}, {data, rest, graphql, queries, account
   data.user.name = `${data.user.login}/${repo}`
 
   //Reformat projects names
-  if (data.plugins.projects)
-    data.plugins.projects.list?.map(project => project.name = project.name.replace(`(${login}/${repo})`, "").trim())
+  if (data.plugins.projects) data.plugins.projects.list?.map(project => (project.name = project.name.replace(`(${login}/${repo})`, "").trim()))
 }

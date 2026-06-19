@@ -1,11 +1,10 @@
 // @ts-nocheck -- TODO(ts): remove and type this plugin (staged migration)
 //Setup
-export default async function({login, data, queries, imports, q, account}, {enabled = false, extras = false} = {}) {
+export default async function ({login, data, queries, imports, q, account}, {enabled = false, extras = false} = {}) {
   //Plugin execution
   try {
     //Check if plugin is enabled and requirements are met
-    if ((!q.anilist) || (!imports.metadata.plugins.anilist.enabled(enabled, {extras})))
-      return null
+    if (!q.anilist || !imports.metadata.plugins.anilist.enabled(enabled, {extras})) return null
 
     //Load inputs
     let {limit, "limit.characters": limit_characters, medias, sections, shuffle, user} = imports.metadata.plugins.anilist.inputs({data, account, q})
@@ -18,24 +17,35 @@ export default async function({login, data, queries, imports, q, account}, {enab
       try {
         //Query API
         console.debug(`metrics/compute/${login}/plugins > anilist > querying api (user statistics)`)
-        const {data: {data: {User: {statistics: stats}}}} = await imports.axios.post("https://graphql.anilist.co", {variables: {name: user}, query: queries.anilist.statistics()})
+        const {
+          data: {
+            data: {
+              User: {statistics: stats},
+            },
+          },
+        } = await imports.axios.post("https://graphql.anilist.co", {variables: {name: user}, query: queries.anilist.statistics()})
         //Format and save results
         result.user.stats = stats
         result.user.genres = [...new Set([...stats.anime.genres.map(({genre}) => genre), ...stats.manga.genres.map(({genre}) => genre)])]
-      }
-      catch (error) {
+      } catch (error) {
         await retry({login, imports, error})
       }
     }
 
     //Medias lists
-    if ((sections.includes("watching")) || (sections.includes("reading"))) {
+    if (sections.includes("watching") || sections.includes("reading")) {
       for (const type of medias) {
         for (let retried = false; !retried; retried = true) {
           try {
             //Query API
             console.debug(`metrics/compute/${login}/plugins > anilist > querying api (medias lists - ${type})`)
-            const {data: {data: {MediaListCollection: {lists}}}} = await imports.axios.post("https://graphql.anilist.co", {variables: {name: user, type: type.toLocaleUpperCase()}, query: queries.anilist.medias()})
+            const {
+              data: {
+                data: {
+                  MediaListCollection: {lists},
+                },
+              },
+            } = await imports.axios.post("https://graphql.anilist.co", {variables: {name: user, type: type.toLocaleUpperCase()}, query: queries.anilist.medias()})
             //Format and save results
             for (const {name, entries} of lists) {
               //Format results
@@ -47,8 +57,7 @@ export default async function({login, data, queries, imports, q, account}, {enab
                 result.lists[type][name.toLocaleLowerCase()].splice(limit)
               }
             }
-          }
-          catch (error) {
+          } catch (error) {
             await retry({login, imports, error})
           }
         }
@@ -66,17 +75,24 @@ export default async function({login, data, queries, imports, q, account}, {enab
         do {
           try {
             console.debug(`metrics/compute/${login}/plugins > anilist > querying api (favorites ${type}s - page ${page})`)
-            const {data: {data: {User: {favourites: {[type]: {nodes, pageInfo: cursor}}}}}} = await imports.axios.post("https://graphql.anilist.co", {variables: {name: user, page}, query: queries.anilist.favorites({type})})
+            const {
+              data: {
+                data: {
+                  User: {
+                    favourites: {
+                      [type]: {nodes, pageInfo: cursor},
+                    },
+                  },
+                },
+              },
+            } = await imports.axios.post("https://graphql.anilist.co", {variables: {name: user, page}, query: queries.anilist.favorites({type})})
             page++
             next = cursor.hasNextPage
-            list.push(...await Promise.all(nodes.map(media => format({media: {progress: null, score: null, media}, imports}))))
+            list.push(...(await Promise.all(nodes.map(media => format({media: {progress: null, score: null, media}, imports})))))
+          } catch (error) {
+            if (await retry({login, imports, error})) continue
           }
-          catch (error) {
-            if (await retry({login, imports, error}))
-              continue
-          }
-        }
-        while (next)
+        } while (next)
         //Format and save results
         result.lists[type].favorites = shuffle ? imports.shuffle(list) : list
         //Limit results
@@ -97,20 +113,30 @@ export default async function({login, data, queries, imports, q, account}, {enab
       do {
         try {
           console.debug(`metrics/compute/${login}/plugins > anilist > querying api (favorites characters - page ${page})`)
-          const {data: {data: {User: {favourites: {characters: {nodes, pageInfo: cursor}}}}}} = await imports.axios.post("https://graphql.anilist.co", {variables: {name: user, page}, query: queries.anilist.characters()})
+          const {
+            data: {
+              data: {
+                User: {
+                  favourites: {
+                    characters: {nodes, pageInfo: cursor},
+                  },
+                },
+              },
+            },
+          } = await imports.axios.post("https://graphql.anilist.co", {variables: {name: user, page}, query: queries.anilist.characters()})
           page++
           next = cursor.hasNextPage
-          for (const {name: {full: name}, image: {medium: artwork}} of nodes) {
+          for (const {
+            name: {full: name},
+            image: {medium: artwork},
+          } of nodes) {
             console.debug(`metrics/compute/${login}/plugins > anilist > processing ${name}`)
             characters.push({name, artwork: await imports.imgb64(artwork)})
           }
+        } catch (error) {
+          if (await retry({login, imports, error})) continue
         }
-        catch (error) {
-          if (await retry({login, imports, error}))
-            continue
-        }
-      }
-      while (next)
+      } while (next)
       //Format and save results
       result.characters = shuffle ? imports.shuffle(characters) : characters
       //Limit results
@@ -122,16 +148,30 @@ export default async function({login, data, queries, imports, q, account}, {enab
 
     //Results
     return result
-  }
-  //Handle errors
-  catch (error) {
+  } catch (error) {
+    //Handle errors
     throw imports.format.error(error)
   }
 }
 
 /**Media formatter */
 async function format({media, imports}) {
-  const {progress, score: userScore, media: {title, description, status, startDate: {year: release}, genres, averageScore, episodes, chapters, type, coverImage: {medium: artwork}}} = media
+  const {
+    progress,
+    score: userScore,
+    media: {
+      title,
+      description,
+      status,
+      startDate: {year: release},
+      genres,
+      averageScore,
+      episodes,
+      chapters,
+      type,
+      coverImage: {medium: artwork},
+    },
+  } = media
   return {
     name: title.romaji,
     type,
@@ -148,7 +188,7 @@ async function format({media, imports}) {
 
 /**Rate-limiter handler */
 async function retry({login, imports, error}) {
-  if ((error.isAxiosError) && (error.response.status === 429)) {
+  if (error.isAxiosError && error.response.status === 429) {
     const delay = Number(error.response.headers["retry-after"]) + 5
     console.debug(`metrics/compute/${login}/plugins > anilist > reached requests limit, retrying in ${delay}s`)
     await imports.wait(delay)

@@ -4,16 +4,16 @@ import twemojis from "@twemoji/parser"
 import axios from "axios"
 import processes from "child_process"
 import crypto from "crypto"
-import { minify as csso } from "csso"
+import {minify as csso} from "csso"
 import * as d3 from "d3"
 import emoji from "emoji-name-map"
-import { fileTypeFromBuffer } from "file-type"
+import {fileTypeFromBuffer} from "file-type"
 import fss from "fs"
 import fs from "fs/promises"
-import { JSDOM } from "jsdom"
+import {JSDOM} from "jsdom"
 import linguist from "linguist-js"
-import { marked } from "marked"
-import { minimatch } from "minimatch"
+import {marked} from "marked"
+import {minimatch} from "minimatch"
 import opengraph from "open-graph-scraper"
 import os from "os"
 import paths from "path"
@@ -33,7 +33,7 @@ import xmlformat from "xml-formatter"
 prism_lang()
 
 //Exports
-export { axios, d3, emoji, fs, git, minimatch, opengraph, os, paths, processes, sharp, url, util }
+export {axios, d3, emoji, fs, git, minimatch, opengraph, os, paths, processes, sharp, url, util}
 
 /**Returns module __dirname */
 export function __module(module) {
@@ -64,50 +64,64 @@ export function formatters({timeZone} = {} as any) {
   //Check options
   try {
     new Date().toLocaleString("fr", {timeZoneName: "short", timeZone})
-  }
-  catch {
+  } catch {
     timeZone = undefined
   }
 
   /**Formatter */
-  const format = function(n, {sign = false, unit = true, fixed} = {} as any) {
+  const format = function (n, {sign = false, unit = true, fixed} = {} as any) {
     if (unit) {
-      for (const {u, v} of [{u: "b", v: 10 ** 9}, {u: "m", v: 10 ** 6}, {u: "k", v: 10 ** 3}]) {
+      for (const {u, v} of [
+        {u: "b", v: 10 ** 9},
+        {u: "m", v: 10 ** 6},
+        {u: "k", v: 10 ** 3},
+      ]) {
         if (n / v >= 1)
-          return `${(sign) && (n > 0) ? "+" : ""}${(n / v).toFixed(fixed ?? 2).substr(0, 4).replace(/[.]0*$/, "")}${u}`
+          return `${sign && n > 0 ? "+" : ""}${(n / v)
+            .toFixed(fixed ?? 2)
+            .substr(0, 4)
+            .replace(/[.]0*$/, "")}${u}`
       }
     }
-    return `${(sign) && (n > 0) ? "+" : ""}${fixed ? n.toFixed(fixed) : n}`
+    return `${sign && n > 0 ? "+" : ""}${fixed ? n.toFixed(fixed) : n}`
   }
 
   /**Bytes formatter */
-  format.bytes = function(n) {
-    for (const {u, v} of [{u: "E", v: 10 ** 18}, {u: "P", v: 10 ** 15}, {u: "T", v: 10 ** 12}, {u: "G", v: 10 ** 9}, {u: "M", v: 10 ** 6}, {u: "k", v: 10 ** 3}]) {
+  format.bytes = function (n) {
+    for (const {u, v} of [
+      {u: "E", v: 10 ** 18},
+      {u: "P", v: 10 ** 15},
+      {u: "T", v: 10 ** 12},
+      {u: "G", v: 10 ** 9},
+      {u: "M", v: 10 ** 6},
+      {u: "k", v: 10 ** 3},
+    ]) {
       if (n / v >= 1)
-        return `${(n / v).toFixed(2).substr(0, 4).replace(/[.]0*$/, "")} ${u}B`
+        return `${(n / v)
+          .toFixed(2)
+          .substr(0, 4)
+          .replace(/[.]0*$/, "")} ${u}B`
     }
     return `${n} byte${n > 1 ? "s" : ""}`
   }
 
   /**Percentage formatter */
-  format.percentage = function(n, {rescale = true} = {}) {
-    return `${
-      (n * (rescale ? 100 : 1)).toFixed(2)
-        .replace(/(?<=[.])(?<decimal>[1-9]*)0+$/, "$<decimal>")
-        .replace(/[.]$/, "")
-    }%`
+  format.percentage = function (n, {rescale = true} = {}) {
+    return `${(n * (rescale ? 100 : 1))
+      .toFixed(2)
+      .replace(/(?<=[.])(?<decimal>[1-9]*)0+$/, "$<decimal>")
+      .replace(/[.]$/, "")}%`
   }
 
   /**Text ellipsis formatter */
-  format.ellipsis = function(text, {length = 20} = {}) {
+  format.ellipsis = function (text, {length = 20} = {}) {
     text = `${text}`
-    if (text.length < length)
-      return text
+    if (text.length < length) return text
     return `${text.substring(0, length)}…`
   }
 
   /**Date formatter */
-  format.date = function(string, options) {
+  format.date = function (string, options) {
     if (options.date) {
       delete options.date
       Object.assign(options, {day: "numeric", month: "short", year: "numeric"})
@@ -120,27 +134,23 @@ export function formatters({timeZone} = {} as any) {
   }
 
   /**License formatter */
-  format.license = function(license) {
-    if (license.spdxId === "NOASSERTION")
-      return license.name
+  format.license = function (license) {
+    if (license.spdxId === "NOASSERTION") return license.name
     return license.nickname ?? license.spdxId ?? license.name
   }
 
   /**Error formatter */
-  format.error = function(error, {descriptions = {} as any, ...attributes} = {}) {
+  format.error = function (error, {descriptions = {} as any, ...attributes} = {}) {
     try {
       //Extras features or enable state error
-      if ((error.extras) || (error.enabled))
-        throw {error: {message: error.message, instance: error}}
+      if (error.extras || error.enabled) throw {error: {message: error.message, instance: error}}
       //Already formatted error
-      if (error.error?.message)
-        throw error
+      if (error.error?.message) throw error
       //Custom description
       let message = "Unexpected error"
       if (descriptions.custom) {
         const description = descriptions.custom(error)
-        if (description)
-          message += ` (${description})`
+        if (description) message += ` (${description})`
       }
       //Axios error
       if (error.isAxiosError) {
@@ -149,12 +159,10 @@ export function formatters({timeZone} = {} as any) {
         message = `API error: ${status}`
 
         //Error description (optional)
-        if ((descriptions) && (descriptions[status]))
-          message += ` (${descriptions[status]})`
+        if (descriptions && descriptions[status]) message += ` (${descriptions[status]})`
         else {
           const description = error.response?.data?.errors?.[0]?.message ?? error.response.data?.error_description ?? error.response?.data?.message ?? null
-          if (description)
-            message += ` (${description})`
+          if (description) message += ` (${description})`
         }
 
         //Error data
@@ -163,8 +171,7 @@ export function formatters({timeZone} = {} as any) {
         throw {error: {message, instance: error}}
       }
       throw {error: {message, instance: error}}
-    }
-    catch (error) {
+    } catch (error) {
       return Object.assign(error, attributes)
     }
   }
@@ -209,7 +216,9 @@ export function stripemojis(string) {
 /**Language analyzer (single file) */
 export async function language({filename, patch}) {
   console.debug(`metrics/language > ${filename}`)
-  const {files: {results}} = await linguist(filename, {fileContent: patch})
+  const {
+    files: {results},
+  } = await linguist(filename, {fileContent: patch})
   const result = (results[filename] ?? "unknown").toLocaleLowerCase()
   console.debug(`metrics/language > ${filename} > result: ${result}`)
   return result
@@ -220,15 +229,13 @@ export async function run(command, options = {}, {prefixed = true, log = true, d
   const prefix = {win32: "wsl"}[process.platform] ?? ""
   command = `${prefixed ? prefix : ""} ${command}`.trim()
   return new Promise<string>((solve, reject) => {
-    if (debug)
-      console.debug(`metrics/command/run > ${command}`)
+    if (debug) console.debug(`metrics/command/run > ${command}`)
     const child = processes.exec(command, options)
     let [stdout, stderr] = ["", ""]
-    child.stdout.on("data", data => stdout += data)
-    child.stderr.on("data", data => stderr += data)
+    child.stdout.on("data", data => (stdout += data))
+    child.stderr.on("data", data => (stderr += data))
     child.on("close", code => {
-      if (debug)
-        console.debug(`metrics/command/run > ${command} > exited with code ${code}`)
+      if (debug) console.debug(`metrics/command/run > ${command} > exited with code ${code}`)
       if (log) {
         console.debug(stdout)
         console.debug(stderr)
@@ -239,27 +246,24 @@ export async function run(command, options = {}, {prefixed = true, log = true, d
 }
 
 /**Spawn command (use this to execute commands and process output on the fly) */
-export async function spawn(command, args = [], options = {}, {prefixed = true, timeout = 300 * 1000, stdout, debug = true} = {} as any) { //eslint-disable-line max-params
+export async function spawn(command, args = [], options = {}, {prefixed = true, timeout = 300 * 1000, stdout, debug = true} = {} as any) {
+  //eslint-disable-line max-params
   const prefix = {win32: "wsl"}[process.platform] ?? ""
-  if ((prefixed) && (prefix)) {
+  if (prefixed && prefix) {
     args.unshift(command)
     command = prefix
   }
-  if (!stdout)
-    throw new Error("`stdout` argument was not provided, use run() instead of spawn() if processing output is not needed")
+  if (!stdout) throw new Error("`stdout` argument was not provided, use run() instead of spawn() if processing output is not needed")
   return new Promise<void>((solve, reject) => {
-    if (debug)
-      console.debug(`metrics/command/spawn > ${command} with ${args.join(" ")}`)
+    if (debug) console.debug(`metrics/command/spawn > ${command} with ${args.join(" ")}`)
     const child = processes.spawn(command, args, {...options, shell: true, timeout})
     const reader = readline.createInterface({input: child.stdout})
     reader.on("line", stdout)
     const closed = new Promise(close => reader.on("close", close))
     child.on("close", async code => {
-      if (debug)
-        console.debug(`metrics/command/spawn > ${command} with ${args.join(" ")} > exited with code ${code}`)
+      if (debug) console.debug(`metrics/command/spawn > ${command} with ${args.join(" ")} > exited with code ${code}`)
       await closed
-      if (debug)
-        console.debug(`metrics/command/spawn > ${command} with ${args.join(" ")} > reader closed`)
+      if (debug) console.debug(`metrics/command/spawn > ${command} with ${args.join(" ")} > reader closed`)
       return code === 0 ? solve() : reject()
     })
   })
@@ -271,8 +275,7 @@ export async function which(command) {
     console.debug(`metrics/command > checking existence of ${command}`)
     await run(`which ${command}`)
     return true
-  }
-  catch {
+  } catch {
     console.debug(`metrics/command > checking existence of ${command} > failed`)
   }
   return false
@@ -306,13 +309,12 @@ export async function markdown(text, {mode = "inline", codelines = Infinity} = {
       break
   }
   //Trim code snippets
-  rendered = rendered.replace(/(?<open><code[\s\S]*?>)(?<code>[\s\S]*?)(?<close><\/code>)/g, (m, open, code, close) => { //eslint-disable-line max-params
+  rendered = rendered.replace(/(?<open><code[\s\S]*?>)(?<code>[\s\S]*?)(?<close><\/code>)/g, (m, open, code, close) => {
+    //eslint-disable-line max-params
     const lines = code.trim().split("\n")
     if (lines.length > 1) {
-      if (/class=".*language-[\s\S]+?.*"/.test(open))
-        open = open.replace(/>/g, ` class="language-multiline ${open.match(/class="(?<class>[\s\S]+)"/)?.groups.class}" xml:space="preserve">`)
-      else if (!/class="[\s\S]*"/.test(open))
-        open = open.replace(/>/g, ' class="language-multiline" xml:space="preserve">')
+      if (/class=".*language-[\s\S]+?.*"/.test(open)) open = open.replace(/>/g, ` class="language-multiline ${open.match(/class="(?<class>[\s\S]+)"/)?.groups.class}" xml:space="preserve">`)
+      else if (!/class="[\s\S]*"/.test(open)) open = open.replace(/>/g, ' class="language-multiline" xml:space="preserve">')
     }
     return `${open}${lines.slice(0, codelines).join("\n")}${lines.length > codelines ? `\n<span class="token trimmed">(${lines.length - codelines} more ${lines.length - codelines === 1 ? "line was" : "lines were"} trimmed)</span>` : ""}${close}`
   })
@@ -324,60 +326,68 @@ export const filters = {
   /**GitHub query filter */
   github(text, object) {
     console.debug(`metrics/svg/ghquery > checking ${text} against ${JSON.stringify(object)}`)
-    const result = text.split(/(?<!NOT) /).map(x => x.trim()).filter(x => x).map(criteria => {
-      const [key, filters] = criteria.split(":")
-      const value = object[/^NOT /.test(key) ? key.substring(3).trim() : /^-/.test(key) ? key.substring(1).trim() : key.trim()]
-      console.debug(`metrics/svg/ghquery > checking ${criteria} against ${value}`)
-      if (value === undefined) {
-        console.debug(`metrics/svg/ghquery > value for ${criteria} is undefined, considering it truthy`)
-        return true
-      }
-      return filters?.split(",").map(x => x.trim()).filter(x => x).map(filter => {
-        if (!Number.isFinite(Number(value))) {
-          if (/^NOT /.test(filter))
-            return value !== filter.substring(3).trim()
-          if (/^-/.test(key))
-            return value !== filter
-          return value === filter.trim()
+    const result = text
+      .split(/(?<!NOT) /)
+      .map(x => x.trim())
+      .filter(x => x)
+      .map(criteria => {
+        const [key, filters] = criteria.split(":")
+        const value = object[/^NOT /.test(key) ? key.substring(3).trim() : /^-/.test(key) ? key.substring(1).trim() : key.trim()]
+        console.debug(`metrics/svg/ghquery > checking ${criteria} against ${value}`)
+        if (value === undefined) {
+          console.debug(`metrics/svg/ghquery > value for ${criteria} is undefined, considering it truthy`)
+          return true
         }
-        switch (true) {
-          case /^true$/.test(filter):
-            return value === true
-          case /^false$/.test(filter):
-            return value === false
-          case /^>\d+$/.test(filter):
-            return value > Number(filter.substring(1))
-          case /^>=\d+$/.test(filter):
-            return value >= Number(filter.substring(2))
-          case /^<\d+$/.test(filter):
-            return value < Number(filter.substring(1))
-          case /^<=\d+$/.test(filter):
-            return value <= Number(filter.substring(2))
-          case /^\d+$/.test(filter):
-            return value === Number(filter)
-          case /^\d+..\d+$/.test(filter): {
-            const [a, b] = filter.split("..").map(Number)
-            return (value >= a) && (value <= b)
-          }
-          default:
-            return false
-        }
-      }).reduce((a, b) => a || b, false) ?? false
-    }).reduce((a, b) => a && b, true)
+        return (
+          filters
+            ?.split(",")
+            .map(x => x.trim())
+            .filter(x => x)
+            .map(filter => {
+              if (!Number.isFinite(Number(value))) {
+                if (/^NOT /.test(filter)) return value !== filter.substring(3).trim()
+                if (/^-/.test(key)) return value !== filter
+                return value === filter.trim()
+              }
+              switch (true) {
+                case /^true$/.test(filter):
+                  return value === true
+                case /^false$/.test(filter):
+                  return value === false
+                case /^>\d+$/.test(filter):
+                  return value > Number(filter.substring(1))
+                case /^>=\d+$/.test(filter):
+                  return value >= Number(filter.substring(2))
+                case /^<\d+$/.test(filter):
+                  return value < Number(filter.substring(1))
+                case /^<=\d+$/.test(filter):
+                  return value <= Number(filter.substring(2))
+                case /^\d+$/.test(filter):
+                  return value === Number(filter)
+                case /^\d+..\d+$/.test(filter): {
+                  const [a, b] = filter.split("..").map(Number)
+                  return value >= a && value <= b
+                }
+                default:
+                  return false
+              }
+            })
+            .reduce((a, b) => a || b, false) ?? false
+        )
+      })
+      .reduce((a, b) => a && b, true)
     console.debug(`metrics/svg/ghquery > ${result ? "matching" : "not matching"}`)
     return result
   },
   /**Repository filter*/
   repo(repository, patterns, {debug = true} = {}) {
     //Disable filtering when no pattern is provided
-    if (!patterns.length)
-      return true
+    if (!patterns.length) return true
 
     //Normalize repository handle
     let repo, user
-    if (repository.nameWithOwner)
-      repository = repository.nameWithOwner
-    if ((repository.name) && (repository.owner?.login)) {
+    if (repository.nameWithOwner) repository = repository.nameWithOwner
+    if (repository.name && repository.owner?.login) {
       user = repository.owner.login
       repo = repository.name
     }
@@ -388,48 +398,41 @@ export const filters = {
     let include = true
     //Advanced pattern matching
     if (patterns[0] === "@use.patterns") {
-      if (debug)
-        console.debug(`metrics/filters/repo > ${repo} > using advanced pattern matching`)
+      if (debug) console.debug(`metrics/filters/repo > ${repo} > using advanced pattern matching`)
       const options = {nocase: true}
       for (let pattern of patterns) {
-        if (pattern.startsWith("#"))
-          continue
+        if (pattern.startsWith("#")) continue
         let action = false
-        if ((pattern.startsWith("+")) || (pattern.startsWith("-"))) {
+        if (pattern.startsWith("+") || pattern.startsWith("-")) {
           action = pattern.charAt(0) === "+"
           pattern = pattern.substring(1)
         }
         if (minimatch(handle, pattern, options)) {
-          if (debug)
-            console.debug(`metrics/filters/repo > ${repo} matches ${action ? "including" : "excluding"} pattern ${pattern}`)
+          if (debug) console.debug(`metrics/filters/repo > ${repo} matches ${action ? "including" : "excluding"} pattern ${pattern}`)
           include = action
         }
       }
     }
     //Basic pattern matching
     else {
-      if (debug)
-        console.debug(`metrics/filters/repo > ${repo} > using basic pattern matching`)
-      include = (!patterns.includes(repo)) && (!patterns.includes(handle))
+      if (debug) console.debug(`metrics/filters/repo > ${repo} > using basic pattern matching`)
+      include = !patterns.includes(repo) && !patterns.includes(handle)
     }
 
-    if (debug)
-      console.debug(`metrics/filters/repo > filter ${repo} (${include ? "included" : "excluded"})`)
+    if (debug) console.debug(`metrics/filters/repo > filter ${repo} (${include ? "included" : "excluded"})`)
     return include
   },
   /**Text filter*/
   text(text, patterns, {debug = true} = {}) {
     //Disable filtering when no pattern is provided
-    if (!patterns.length)
-      return true
+    if (!patterns.length) return true
 
     //Normalize text
     text = `${text}`.toLocaleLowerCase()
 
     //Basic pattern matching
     const include = !patterns.includes(text)
-    if (debug)
-      console.debug(`metrics/filters/text > filter ${text} (${include ? "included" : "excluded"})`)
+    if (debug) console.debug(`metrics/filters/text > filter ${text} (${include ? "included" : "excluded"})`)
     return include
   },
 }
@@ -437,33 +440,27 @@ export const filters = {
 /**Image to base64 */
 export async function imgb64(image, {width, height, fallback = true} = {} as any) {
   //Ignore already encoded-base 64
-  if ((typeof image === "string") && (image.startsWith("data:image/png;base64")))
-    return image
+  if (typeof image === "string" && image.startsWith("data:image/png;base64")) return image
   //Undefined image
-  if (!image)
-    return fallback ? "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mOcOnfpfwAGfgLYttYINwAAAABJRU5ErkJggg==" : null
+  if (!image) return fallback ? "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mOcOnfpfwAGfgLYttYINwAAAABJRU5ErkJggg==" : null
   //SVG image
-  if ((typeof image === "string") && (image.endsWith(".svg")))
-    return `data:image/svg+xml;base64,${Buffer.from(await fetch(image).then(response => response.arrayBuffer()) as any).toString("base64")}`
+  if (typeof image === "string" && image.endsWith(".svg")) return `data:image/svg+xml;base64,${Buffer.from((await fetch(image).then(response => response.arrayBuffer())) as any).toString("base64")}`
   //Load image
   let ext = "png"
   try {
     if (image.startsWith("http://") || image.startsWith("https://")) {
-      const buffer = Buffer.from(await fetch(image).then(response => response.arrayBuffer()) as any)
+      const buffer = Buffer.from((await fetch(image).then(response => response.arrayBuffer())) as any)
       ext = (await fileTypeFromBuffer(buffer))?.ext ?? ext
       image = sharp(buffer)
-    }
-    else {
+    } else {
       image = sharp(image)
     }
-  }
-  catch (error) {
+  } catch (error) {
     console.debug(`metrics/imgb64 > error > ${error}${fallback ? " (using fallback image instead)" : ""}`)
     return imgb64(null, {fallback})
   }
   //Resize image
-  if ((width) && (height))
-    image = image.resize({width: width > 0 ? width : null, height: height > 0 ? height : null})
+  if (width && height) image = image.resize({width: width > 0 ? width : null, height: height > 0 ? height : null})
   return `data:image/${ext};base64,${(await image.toBuffer()).toString("base64")}`
 }
 
@@ -473,16 +470,13 @@ export const svg = {
   async pdf(rendered, {paddings = "", style = "", twemojis = false, gemojis = false, octicons = false, rest = null, errors = []} = {}) {
     //Instantiate browser if needed
     if (!(svg.resize as any).browser) {
-      (svg.resize as any).browser = await puppeteer.launch()
+      ;(svg.resize as any).browser = await puppeteer.launch()
       console.debug(`metrics/svg/pdf > started ${await (svg.resize as any).browser.version()}`)
     }
     //Additional transformations
-    if (twemojis)
-      rendered = await svg.twemojis(rendered, {custom: false})
-    if ((gemojis) && (rest))
-      rendered = await svg.gemojis(rendered, {rest})
-    if (octicons)
-      rendered = await svg.octicons(rendered)
+    if (twemojis) rendered = await svg.twemojis(rendered, {custom: false})
+    if (gemojis && rest) rendered = await svg.gemojis(rendered, {rest})
+    if (octicons) rendered = await svg.octicons(rendered)
     rendered = marked.parse(rendered)
     //Render through browser and print pdf
     console.debug("metrics/svg/pdf > loading svg")
@@ -509,30 +503,29 @@ export const svg = {
   async resize(rendered, {paddings, convert, scripts = []}) {
     //Instantiate browser if needed
     if (!(svg.resize as any).browser) {
-      (svg.resize as any).browser = await puppeteer.launch()
+      ;(svg.resize as any).browser = await puppeteer.launch()
       console.debug(`metrics/svg/resize > started ${await (svg.resize as any).browser.version()}`)
     }
     //Format padding
     const padding = {width: 1, height: 1, absolute: {width: 0, height: 0}}
     paddings = Array.isArray(paddings) ? paddings : `${paddings}`.split(",").map(x => x.trim())
-    for (const [i, dimension] of [[0, "width"], [1, "height"]]) {
+    for (const [i, dimension] of [
+      [0, "width"],
+      [1, "height"],
+    ]) {
       let operands = paddings?.[i] ?? paddings[0]
       let {relative} = operands.match(/(?<relative>[+-]?[\d.]+)%$/)?.groups ?? {}
       operands = operands.replace(relative, "").trim()
       let {absolute} = operands.match(/^(?<absolute>[+-]?[\d.]+)/)?.groups ?? {}
-      if (Number.isFinite(Number(absolute)))
-        padding.absolute[dimension] = Number(absolute)
-      if (Number.isFinite(Number(relative)))
-        padding[dimension] = 1 + Number(relative / 100)
+      if (Number.isFinite(Number(absolute))) padding.absolute[dimension] = Number(absolute)
+      if (Number.isFinite(Number(relative))) padding[dimension] = 1 + Number(relative / 100)
     }
     console.debug(`metrics/svg/resize > padding width*${padding.width}+${padding.absolute.width}, height*${padding.height}+${padding.absolute.height}`)
     //Render through browser and resize height
     console.debug("metrics/svg/resize > loading svg")
     const page = await (svg.resize as any).browser.newPage()
     page.setViewport({width: 980, height: 980})
-    page
-      .on("console", message => console.debug(`metrics/svg/resize > puppeteer > ${message.text()}`))
-      .on("pageerror", error => console.debug(`metrics/svg/resize > puppeteer > ${error.message}`))
+    page.on("console", message => console.debug(`metrics/svg/resize > puppeteer > ${message.text()}`)).on("pageerror", error => console.debug(`metrics/svg/resize > puppeteer > ${error.message}`))
     await page.setContent(rendered, {waitUntil: puppeteer.events})
     console.debug("metrics/svg/resize > loaded svg successfully")
     await page.addStyleTag({content: "body { margin: 0; padding: 0; }"})
@@ -548,15 +541,13 @@ export const svg = {
               console.debug(`metrics/svg/resize > executing ${script}`)
               await new Function("document", `return (async () => {${script}})()`)(document) //eslint-disable-line no-new-func
               console.debug("metrics/svg/resize > successfully executed user javascript")
-            }
-            catch (error) {
+            } catch (error) {
               console.debug(`an error occurred while evaluating script: ${error}`)
             }
           }
           //Disable animations
           const animated = !document.querySelector("svg").classList.contains("no-animations")
-          if (animated)
-            document.querySelector("svg").classList.add("no-animations")
+          if (animated) document.querySelector("svg").classList.add("no-animations")
           console.debug(`animations are ${animated ? "enabled" : "disabled"}`)
           await new Promise(solve => setTimeout(solve, 2400))
           //Get bounds and resize
@@ -566,21 +557,17 @@ export const svg = {
           width = Math.max(1, Math.ceil(width * padding.width + padding.absolute.width))
           console.debug(`bounds after applying padding width=${width} (*${padding.width}+${padding.absolute.width}), height=${height} (*${padding.height}+${padding.absolute.height})`)
           //Resize svg
-          if (document.querySelector("svg").getAttribute("height") === "auto")
-            console.debug('skipped height resizing because it was set to "auto"')
-          else
-            document.querySelector("svg").setAttribute("height", height as any)
+          if (document.querySelector("svg").getAttribute("height") === "auto") console.debug('skipped height resizing because it was set to "auto"')
+          else document.querySelector("svg").setAttribute("height", height as any)
           //Enable animations
-          if (animated)
-            document.querySelector("svg").classList.remove("no-animations")
+          if (animated) document.querySelector("svg").classList.remove("no-animations")
           //Result
           return {resized: new XMLSerializer().serializeToString(document.querySelector("svg")), height, width}
         },
         padding,
         scripts,
       ))
-    }
-    catch (error) {
+    } catch (error) {
       console.debug(`metrics/svg/resize > an error occurred: ${error}`)
       throw error
     }
@@ -598,11 +585,10 @@ export const svg = {
   /**Hash a SVG (removing its metadata first)*/
   async hash(rendered) {
     //Handle empty case
-    if (!rendered)
-      return null
+    if (!rendered) return null
     //Instantiate browser if needed
     if (!(svg.resize as any).browser) {
-      (svg.resize as any).browser = await puppeteer.launch()
+      ;(svg.resize as any).browser = await puppeteer.launch()
       console.debug(`metrics/svg/hash > started ${await (svg.resize as any).browser.version()}`)
     }
     //Compute hash
@@ -624,13 +610,11 @@ export const svg = {
     console.debug("metrics/svg/twemojis > rendering twemojis")
     const emojis = new Map()
     for (const {text: emoji, url} of twemojis.parse(rendered)) {
-      if (!emojis.has(emoji))
-        emojis.set(emoji, (await axios.get(url)).data.replace(/^<svg /, '<svg class="twemoji" '))
+      if (!emojis.has(emoji)) emojis.set(emoji, (await axios.get(url)).data.replace(/^<svg /, '<svg class="twemoji" '))
     }
     //Apply replacements
     for (const [emoji, twemoji] of emojis) {
-      if (custom)
-        rendered = rendered.replace(new RegExp(`<metrics[ ]*(?<attributes>[^>]*)>${emoji}</metrics>`, "g"), twemoji.replace(/(<svg class="twemoji" [\s\S]+?)(>)/, "$1 $<attributes> $2"))
+      if (custom) rendered = rendered.replace(new RegExp(`<metrics[ ]*(?<attributes>[^>]*)>${emoji}</metrics>`, "g"), twemoji.replace(/(<svg class="twemoji" [\s\S]+?)(>)/, "$1 $<attributes> $2"))
       rendered = rendered.replace(new RegExp(emoji, "g"), twemoji)
     }
     return rendered
@@ -641,18 +625,15 @@ export const svg = {
     console.debug("metrics/svg/gemojis > rendering gemojis")
     const emojis = new Map()
     try {
-      for (const [emoji, url] of Object.entries(((await rest.emojis.get().catch(() => ({data: {}}))).data as Record<string, any>)).map(([key, value]) => [`:${key}:`, value])) {
-        if ((!emojis.has(emoji)) && (new RegExp(emoji, "g").test(rendered)))
-          emojis.set(emoji, `<img class="gemoji" src="${await imgb64(url)}" height="16" width="16" alt="" />`)
+      for (const [emoji, url] of Object.entries((await rest.emojis.get().catch(() => ({data: {}}))).data as Record<string, any>).map(([key, value]) => [`:${key}:`, value])) {
+        if (!emojis.has(emoji) && new RegExp(emoji, "g").test(rendered)) emojis.set(emoji, `<img class="gemoji" src="${await imgb64(url)}" height="16" width="16" alt="" />`)
       }
-    }
-    catch (error) {
+    } catch (error) {
       console.debug("metrics/svg/gemojis > could not load gemojis")
       console.debug(error)
     }
     //Apply replacements
-    for (const [emoji, gemoji] of emojis)
-      rendered = rendered.replace(new RegExp(emoji, "g"), gemoji)
+    for (const [emoji, gemoji] of emojis) rendered = rendered.replace(new RegExp(emoji, "g"), gemoji)
     return rendered
   },
   /**Render github octicons */
@@ -665,14 +646,12 @@ export const svg = {
         const octicon = `:octicon-${name}-${size}:`
         if (new RegExp(`:octicon-${name}(?:-[0-9]+)?:`, "g").test(rendered)) {
           icons.set(octicon, toSVG({height: size, width: size}))
-          if (Number(size) === 16)
-            icons.set(`:octicon-${name}:`, toSVG({height: size, width: size}))
+          if (Number(size) === 16) icons.set(`:octicon-${name}:`, toSVG({height: size, width: size}))
         }
       }
     }
     //Apply replacements
-    for (const [octicon, image] of icons)
-      rendered = rendered.replace(new RegExp(octicon, "g"), image)
+    for (const [octicon, image] of icons) rendered = rendered.replace(new RegExp(octicon, "g"), image)
     return rendered
   },
   /**Optimizers */
@@ -728,8 +707,7 @@ export const svg = {
           {name: "removeViewBox", active: false},
         ]),
       })
-      if (error)
-        throw new Error(`Could not optimize SVG: \n${error}`)
+      if (error) throw new Error(`Could not optimize SVG: \n${error}`)
       return optimized
     },
   },
@@ -747,13 +725,22 @@ export async function record({page, width, height, frames, scale = 1, quality = 
   for (let i = 0; i < frames; i++) {
     images.push(await page.screenshot({type: "png", clip: {width, height, x, y}, omitBackground: background}))
     await wait(delay / 1000)
-    if (i % 10 === 0)
-      console.debug(`metrics/record > processed ${i}/${frames} frames`)
+    if (i % 10 === 0) console.debug(`metrics/record > processed ${i}/${frames} frames`)
   }
   console.debug(`metrics/record > processed ${frames}/${frames} frames`)
   //Post-processing
   console.debug("metrics/record > applying post-processing")
-  return Promise.all(images.map(async buffer => `data:image/png;base64,${(await (sharp(buffer).resize({width: Math.round(width * scale), height: Math.round(height * scale)}).png({quality}).toBuffer())).toString("base64")}`))
+  return Promise.all(
+    images.map(
+      async buffer =>
+        `data:image/png;base64,${(
+          await sharp(buffer)
+            .resize({width: Math.round(width * scale), height: Math.round(height * scale)})
+            .png({quality})
+            .toBuffer()
+        ).toString("base64")}`,
+    ),
+  )
 }
 
 /**Create gif from puppeteer browser*/
@@ -761,8 +748,7 @@ export async function gif({page, width, height, frames, x = 0, y = 0, repeat = t
   //Create temporary stream
   const path = paths.join(os.tmpdir(), `${Math.round(Math.random() * 1000000000)}.gif`)
   console.debug(`metrics/puppeteergif > set write stream to "${path}"`)
-  if (fss.existsSync(path))
-    await fs.unlink(path)
+  if (fss.existsSync(path)) await fs.unlink(path)
   //Create encoder
   try {
     const GIFEncoder = (await import("gifencoder")).default
@@ -776,8 +762,7 @@ export async function gif({page, width, height, frames, x = 0, y = 0, repeat = t
     for (let i = 0; i < frames; i++) {
       const buffer = new PNG(await page.screenshot({clip: {width, height, x, y}}))
       encoder.addFrame(await new Promise(solve => buffer.decode(pixels => solve(pixels))))
-      if (frames % 10 === 0)
-        console.debug(`metrics/puppeteergif > processed ${i}/${frames} frames`)
+      if (frames % 10 === 0) console.debug(`metrics/puppeteergif > processed ${i}/${frames} frames`)
     }
     console.debug(`metrics/puppeteergif > processed ${frames}/${frames} frames`)
     //Close encoder and convert to base64
@@ -785,8 +770,7 @@ export async function gif({page, width, height, frames, x = 0, y = 0, repeat = t
     const result = await fs.readFile(path, "base64")
     await fs.unlink(path)
     return `data:image/gif;base64,${result}`
-  }
-  catch (error) {
+  } catch (error) {
     console.debug(`metrics/puppeteergif > could not create gif: ${error}`)
     return "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mOcOnfpfwAGfgLYttYINwAAAABJRU5ErkJggg=="
   }
@@ -807,8 +791,7 @@ export class D3node {
 
   createSVG(width, height) {
     const svg = this.element.append("svg").attr("xmlns", "http://www.w3.org/2000/svg")
-    if ((width) && (height))
-      svg.attr("width", width).attr("height", height)
+    if (width && height) svg.attr("width", width).attr("height", height)
     return svg
   }
 
@@ -845,15 +828,12 @@ export const Graph = {
     const T = data.map(({text}, i) => text ?? Y[i])
 
     //Time range
-    const x = (type === "time" ? d3.scaleTime() : d3.scaleLinear())
-      .domain([start, end])
-      .range([margin.top, width - margin.left - margin.right])
+    const x = (type === "time" ? d3.scaleTime() : d3.scaleLinear()).domain([start, end]).range([margin.top, width - margin.left - margin.right])
     let xticks = d3.axisBottom(x).tickSizeOuter(0)
-    if (labels)
-      xticks = xticks.tickFormat((_, i) => labels[i])
-    if (ticks)
-      xticks = xticks.ticks(ticks)
-    svg.append("g")
+    if (labels) xticks = xticks.tickFormat((_, i) => labels[i])
+    if (ticks) xticks = xticks.ticks(ticks)
+    svg
+      .append("g")
       .attr("transform", `translate(${margin.left},${height - margin.bottom})`)
       .call(xticks)
       .call(g => g.select(".domain").attr("stroke", "rgba(127, 127, 127, .8)"))
@@ -865,12 +845,19 @@ export const Graph = {
       .attr("fill", "rgba(127, 127, 127, .8)")
 
     //Data range
-    const y = d3.scaleLinear()
+    const y = d3
+      .scaleLinear()
       .domain([high, low])
       .range([margin.left, height - margin.top - margin.bottom])
-    svg.append("g")
+    svg
+      .append("g")
       .attr("transform", `translate(${margin.left},${margin.top})`)
-      .call(d3.axisRight(y).ticks(Math.round(height / 50)).tickSize(width - margin.left - margin.right))
+      .call(
+        d3
+          .axisRight(y)
+          .ticks(Math.round(height / 50))
+          .tickSize(width - margin.left - margin.right),
+      )
       .call(g => g.select(".domain").remove())
       .call(g => g.selectAll(".tick line").attr("stroke-opacity", 0.5).attr("stroke-dasharray", "2,2"))
       .call(g => g.selectAll(".tick text").attr("x", 0).attr("dy", -4))
@@ -883,12 +870,14 @@ export const Graph = {
     const tdatum = Y.map((y, i) => [X.at(i), y, T[i]])
     const xticked = xticks.scale().ticks(xticks.ticks()[0])
     const yticked = match?.(tdatum, xticked) ?? tdatum
-    svg.append("path")
+    svg
+      .append("path")
       .datum(datum)
       .attr("transform", `translate(${margin.left},${margin.top})`)
       .attr(
         "d",
-        d3.line()
+        d3
+          .line()
           .curve(d3.curveLinear)
           .x(d => x(d[0]))
           .y(d => y(d[1])),
@@ -899,12 +888,14 @@ export const Graph = {
 
     //Generate graph area
     if (area) {
-      svg.append("path")
+      svg
+        .append("path")
         .datum(datum)
         .attr("transform", `translate(${margin.left},${margin.top})`)
         .attr(
           "d",
-          d3.area()
+          d3
+            .area()
             .curve(d3.curveLinear)
             .x(d => x(d[0]))
             .y0(d => y(d[1]))
@@ -915,7 +906,8 @@ export const Graph = {
 
     //Generate graph points
     if (points) {
-      svg.append("g")
+      svg
+        .append("g")
         .selectAll("circle")
         .data(yticked)
         .join("circle")
@@ -928,7 +920,8 @@ export const Graph = {
 
     //Generate graph text
     if (text) {
-      svg.append("g")
+      svg
+        .append("g")
         .attr("fill", "currentColor")
         .attr("text-anchor", "middle")
         .attr("font-family", "sans-serif")
@@ -943,7 +936,7 @@ export const Graph = {
         .attr("transform", `translate(${margin.left},${margin.top - 4})`)
         .attr("x", d => x(d[0]))
         .attr("y", d => y(d[1]))
-        .text(d => d[2] ? d[2] : "")
+        .text(d => (d[2] ? d[2] : ""))
         .attr("fill", "rgba(127, 127, 127, .8)")
     }
 
@@ -969,11 +962,19 @@ export const Graph = {
 
     //Construct arcs
     const color = d3.scaleOrdinal(K, spectral[K.length])
-    const arcs = d3.pie().padAngle(1 / radius).sort(null).value(i => V[i])(I)
+    const arcs = d3
+      .pie()
+      .padAngle(1 / radius)
+      .sort(null)
+      .value(i => V[i])(I)
     const arc = d3.arc().innerRadius(0).outerRadius(radius)
-    const labels = d3.arc().innerRadius(radius / 2).outerRadius(radius / 2)
+    const labels = d3
+      .arc()
+      .innerRadius(radius / 2)
+      .outerRadius(radius / 2)
 
-    svg.append("g")
+    svg
+      .append("g")
       .attr("transform", `translate(${width / 2},${height / 2})`)
       .attr("stroke", "white")
       .attr("stroke-width", 1)
@@ -986,7 +987,8 @@ export const Graph = {
       .append("title")
       .text(d => `${K[d.data]}\n${V[d.data]}`)
 
-    svg.append("g")
+    svg
+      .append("g")
       .attr("transform", `translate(${width / 2},${height / 2})`)
       .attr("font-family", "sans-serif")
       .attr("font-size", 12)
@@ -1001,12 +1003,12 @@ export const Graph = {
       .selectAll("tspan")
       .data(d => {
         const lines = `${K[d.data]}\n${V[d.data]}`.split(/\n/)
-        return (d.endAngle - d.startAngle) > 0.25 ? lines : lines.slice(0, 1)
+        return d.endAngle - d.startAngle > 0.25 ? lines : lines.slice(0, 1)
       })
       .join("tspan")
       .attr("x", 0)
       .attr("y", (_, i) => `${i * 1.1}em`)
-      .attr("font-weight", (_, i) => i ? null : "bold")
+      .attr("font-weight", (_, i) => (i ? null : "bold"))
       .text(d => d)
 
     return d3n.svgString()

@@ -2,8 +2,8 @@
 //Imports
 import OctokitRest from "@octokit/rest"
 import yargsparser from "yargs-parser"
-import { IndepthAnalyzer } from "./indepth.mts"
-import { RecentAnalyzer } from "./recent.mts"
+import {IndepthAnalyzer} from "./indepth.mts"
+import {RecentAnalyzer} from "./recent.mts"
 
 const help = `
 
@@ -19,11 +19,11 @@ export async function cli() {
     return null
   }
   const {default: setup} = await import("../../../app/metrics/setup.mts")
-  const {conf: {metadata}} = await setup({log: false})
-  const {login, _: repositories, mode = "indepth"} = argv
   const {
-    "commits.authoring": authoring,
-  } = await metadata.plugins.base.inputs({
+    conf: {metadata},
+  } = await setup({log: false})
+  const {login, _: repositories, mode = "indepth"} = argv
+  const {"commits.authoring": authoring} = await metadata.plugins.base.inputs({
     q: {
       "commits.authoring": argv["commits-authoring"] || login,
     },

@@ -1,11 +1,10 @@
 // @ts-nocheck -- TODO(ts): remove and type this plugin (staged migration)
 //Setup
-export default async function({login, q, data, imports, graphql, queries, account}, {enabled = false, extras = false} = {}) {
+export default async function ({login, q, data, imports, graphql, queries, account}, {enabled = false, extras = false} = {}) {
   //Plugin execution
   try {
     //Check if plugin is enabled and requirements are met
-    if ((!q.calendar) || (!imports.metadata.plugins.calendar.enabled(enabled, {extras})))
-      return null
+    if (!q.calendar || !imports.metadata.plugins.calendar.enabled(enabled, {extras})) return null
 
     //Load inputs
     let {limit} = imports.metadata.plugins.calendar.inputs({data, account, q})
@@ -22,15 +21,13 @@ export default async function({login, q, data, imports, graphql, queries, accoun
       console.debug(`metrics/compute/${login}/plugins > calendar > processing year ${year}`)
       const weeks = []
       const newyear = new Date(year, 0, 1)
-      const endyear = (year === end) ? new Date() : new Date(year, 11, 31)
-      for (let from = new Date(newyear); from < endyear;) {
+      const endyear = year === end ? new Date() : new Date(year, 11, 31)
+      for (let from = new Date(newyear); from < endyear; ) {
         //Set date range and ensure we start on sundays
         let to = new Date(from)
         to.setUTCHours(+4 * 7 * 24)
-        if (to.getUTCDay())
-          to.setUTCHours(-to.getUTCDay() * 24)
-        if (to > endyear)
-          to = endyear
+        if (to.getUTCDay()) to.setUTCHours(-to.getUTCDay() * 24)
+        if (to > endyear) to = endyear
 
         //Ensure that date ranges are not overlapping by setting it to previous day at 23:59:59.999
         const dto = new Date(to)
@@ -40,7 +37,11 @@ export default async function({login, q, data, imports, graphql, queries, accoun
         dto.setUTCMilliseconds(999)
         //Fetch data from api
         console.debug(`metrics/compute/${login}/plugins > calendar > loading calendar from "${from.toISOString()}" to "${dto.toISOString()}"`)
-        const {user: {calendar: {contributionCalendar}}} = await graphql(queries.isocalendar.calendar({login, from: from.toISOString(), to: dto.toISOString()}))
+        const {
+          user: {
+            calendar: {contributionCalendar},
+          },
+        } = await graphql(queries.isocalendar.calendar({login, from: from.toISOString(), to: dto.toISOString()}))
         weeks.push(...contributionCalendar.weeks)
         //Set next date range start
         from = new Date(to)
@@ -50,9 +51,8 @@ export default async function({login, q, data, imports, graphql, queries, accoun
 
     //Results
     return calendar
-  }
-  //Handle errors
-  catch (error) {
+  } catch (error) {
+    //Handle errors
     throw imports.format.error(error)
   }
 }

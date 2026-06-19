@@ -3,20 +3,18 @@
 import rss from "rss-parser"
 
 //Setup
-export default async function({login, q, imports, data, account}, {enabled = false, extras = false} = {}) {
+export default async function ({login, q, imports, data, account}, {enabled = false, extras = false} = {}) {
   //Plugin execution
   try {
     //Check if plugin is enabled and requirements are met
-    if ((!q.rss) || (!imports.metadata.plugins.rss.enabled(enabled, {extras})))
-      return null
+    if (!q.rss || !imports.metadata.plugins.rss.enabled(enabled, {extras})) return null
 
     //Load inputs
     let {source, limit} = imports.metadata.plugins.rss.inputs({data, account, q})
-    if (!source)
-      throw {error: {message: "RSS feed URL is not set"}}
+    if (!source) throw {error: {message: "RSS feed URL is not set"}}
 
     //Load rss feed
-    const {title, description, link, items} = await (new rss()).parseURL(source) //eslint-disable-line new-cap
+    const {title, description, link, items} = await new rss().parseURL(source) //eslint-disable-line new-cap
     const feed = items.map(({title, link, isoDate: date}) => ({title, link, date: new Date(date)}))
 
     //Limit feed
@@ -27,9 +25,8 @@ export default async function({login, q, imports, data, account}, {enabled = fal
 
     //Results
     return {source: title, description, link, feed}
-  }
-  //Handle errors
-  catch (error) {
+  } catch (error) {
+    //Handle errors
     throw imports.format.error(error)
   }
 }

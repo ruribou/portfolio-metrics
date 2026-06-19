@@ -15,8 +15,7 @@ export default async function metrics({login, q}, {graphql, rest, plugins, conf,
 
     //Load template
     const template = q.template || conf.settings.templates.default
-    if ((!(template in Templates)) || (!(template in conf.templates)) || ((conf.settings.templates.enabled.length) && (!conf.settings.templates.enabled.includes(template))))
-      throw new Error("unsupported template")
+    if (!(template in Templates) || !(template in conf.templates) || (conf.settings.templates.enabled.length && !conf.settings.templates.enabled.includes(template))) throw new Error("unsupported template")
     const {image, style, fonts, views, partials} = conf.templates[template]
     const computer = Templates[template].default || Templates[template]
     convert = convert ?? conf.metadata.templates[template]?.formats?.[0] ?? null
@@ -33,21 +32,21 @@ export default async function metrics({login, q}, {graphql, rest, plugins, conf,
       ...utils.formatters({timeZone: q["config.timezone"]}),
       ...(/markdown/.test(convert)
         ? {
-          imgb64(url, options) {
-            return options?.force ? (utils.imgb64 as any)(...arguments) : url
-          },
-        }
+            imgb64(url, options) {
+              return options?.force ? (utils.imgb64 as any)(...arguments) : url
+            },
+          }
         : null),
     }
     const {"debug.flags": dflags, "experimental.features": _experimental, "config.order": _partials} = imports.metadata.plugins.core.inputs({account: "bypass", q})
-    const extras = {css: imports.metadata.plugins.core.extras("extras_css", {...conf.settings, error: false}) ? q["extras.css"] ?? "" : "", js: imports.metadata.plugins.core.extras("extras_js", {...conf.settings, error: false}) ? q["extras.js"] ?? "" : ""}
+    const extras = {css: imports.metadata.plugins.core.extras("extras_css", {...conf.settings, error: false}) ? (q["extras.css"] ?? "") : "", js: imports.metadata.plugins.core.extras("extras_js", {...conf.settings, error: false}) ? (q["extras.js"] ?? "") : ""}
     const data: Dict = {q, animated: true, large: false, base: {}, config: {}, errors: [], warnings, plugins: {}, computed: {}, extras, postscripts: []}
     const experimental = new Set(_experimental)
     if (conf.settings["debug.headless"]) {
       imports.puppeteer.headless = false
       console.debug(`metrics/compute/${login} > disabled puppeteer headless mode`)
     }
-    if ((conf.settings.debug) || (process.env.GITHUB_ACTIONS)) {
+    if (conf.settings.debug || process.env.GITHUB_ACTIONS) {
       if (dflags.includes("--puppeteer-disable-headless")) {
         imports.puppeteer.headless = false
         console.debug(`metrics/compute/${login} > disabled puppeteer headless mode`)
@@ -63,15 +62,11 @@ export default async function metrics({login, q}, {graphql, rest, plugins, conf,
     }
 
     //Metrics insights
-    if (convert === "insights")
-      return (metrics as any).insights.output({login, imports, conf}, {graphql, rest, Plugins, Templates})
+    if (convert === "insights") return (metrics as any).insights.output({login, imports, conf}, {graphql, rest, Plugins, Templates})
 
     //Partial parts
     {
-      data.partials = new Set([
-        ..._partials.filter(partial => partials.includes(partial)),
-        ...partials,
-      ])
+      data.partials = new Set([..._partials.filter(partial => partials.includes(partial)), ...partials])
       console.debug(`metrics/compute/${login} > content order : ${[...data.partials]}`)
     }
 
@@ -85,28 +80,25 @@ export default async function metrics({login, q}, {graphql, rest, plugins, conf,
     const errors = [...promised.filter(({result = null}) => result?.error), ...data.errors]
     if (errors.length) {
       console.debug(`metrics/compute/${login} > ${errors.length} errors !`)
-      if (die)
-        throw new Error("An error occurred during rendering, dying")
-      else
-        console.debug(util.inspect(errors, {depth: Infinity, maxStringLength: 256}))
+      if (die) throw new Error("An error occurred during rendering, dying")
+      else console.debug(util.inspect(errors, {depth: Infinity, maxStringLength: 256}))
     }
 
     //JSON output
     if (convert === "json") {
       console.debug(`metrics/compute/${login} > json output`)
       const cache = new WeakSet()
-      const rendered = JSON.parse(JSON.stringify(data, (key, value: any) => {
-        if ((value instanceof Set) || (Array.isArray(value)))
-          return [...value]
-        if (value instanceof Map)
-          return Object.fromEntries(value)
-        if ((typeof value === "object") && (value)) {
-          if (cache.has(value))
-            return Object.fromEntries(Object.entries(value as any).map(([k, v]) => [k, cache.has(v as object) ? "[Circular]" : v]))
-          cache.add(value)
-        }
-        return value
-      }))
+      const rendered = JSON.parse(
+        JSON.stringify(data, (key, value: any) => {
+          if (value instanceof Set || Array.isArray(value)) return [...value]
+          if (value instanceof Map) return Object.fromEntries(value)
+          if (typeof value === "object" && value) {
+            if (cache.has(value)) return Object.fromEntries(Object.entries(value as any).map(([k, v]) => [k, cache.has(v as object) ? "[Circular]" : v]))
+            cache.add(value)
+          }
+          return value
+        }),
+      )
       return {rendered, mime: "application/json", errors}
     }
 
@@ -118,14 +110,15 @@ export default async function metrics({login, q}, {graphql, rest, plugins, conf,
       try {
         let template = `${q.markdown}`.replace(/\n/g, "")
         if (!/^https:/.test(template)) {
-          const {data: {default_branch: branch, full_name: repo}} = await rest.repos.get({owner: login, repo: q.repo || login})
+          const {
+            data: {default_branch: branch, full_name: repo},
+          } = await rest.repos.get({owner: login, repo: q.repo || login})
           console.debug(`metrics/compute/${login} > on ${repo} with default branch ${branch}`)
           template = `https://raw.githubusercontent.com/${repo}/${branch}/${template}`
         }
         console.debug(`metrics/compute/${login} > fetching ${template}`)
         ;({data: source} = await imports.axios.get(template, {headers: {Accept: "text/plain"}}))
-      }
-      catch (error) {
+      } catch (error) {
         console.debug(error)
       }
       //Embed method
@@ -133,9 +126,8 @@ export default async function metrics({login, q}, {graphql, rest, plugins, conf,
       const embed = async (name, q: Dict = {}) => {
         //Check arguments
         console.debug(`metrics/compute/${login}/embed > ${name} >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>`)
-        if ((!name) || (typeof q !== "object") || (q === null)) {
-          if (die)
-            throw new Error("An error occurred during embed rendering, dying")
+        if (!name || typeof q !== "object" || q === null) {
+          if (die) throw new Error("An error occurred during embed rendering, dying")
           return "<p>⚠️ Failed to execute embed function: invalid arguments</p>"
         }
         console.debug(`metrics/compute/${login} > embed called with`)
@@ -144,14 +136,10 @@ export default async function metrics({login, q}, {graphql, rest, plugins, conf,
         q = {..._q, ...Object.fromEntries(Object.keys(Plugins).map(key => [key, false])), ...Object.fromEntries(conf.settings.plugins.base.parts.map(part => [`base.${part}`, false])), template: q.repo ? "repository" : "classic", ...q}
         //Translate action syntax to web syntax
         let parts = []
-        if (base === true)
-          q = {...q, ...Object.fromEntries(Object.entries(_q).filter(([key]) => /^base[.]?/.test(key)))}
-        if (typeof base === "string")
-          parts = base.split(",").map(x => x.trim())
-        if (Array.isArray(base))
-          parts = base
-        for (const part of parts)
-          q[`base.${part}`] = true
+        if (base === true) q = {...q, ...Object.fromEntries(Object.entries(_q).filter(([key]) => /^base[.]?/.test(key)))}
+        if (typeof base === "string") parts = base.split(",").map(x => x.trim())
+        if (Array.isArray(base)) parts = base
+        for (const part of parts) q[`base.${part}`] = true
         if (convert === "markdown-pdf") {
           q["config.animations"] = false
           q.config_animations = false
@@ -159,9 +147,10 @@ export default async function metrics({login, q}, {graphql, rest, plugins, conf,
         q = Object.fromEntries([...Object.entries(q).map(([key, value]) => [key.replace(/^plugin_/, "").replace(/_/g, "."), value]), ["base", false]])
         //Check users errors
         const warnings = []
-        if ((!Object.keys(Plugins).filter(key => q[key]).length) && (!parts.length))
-          warnings.push({warning: {message: "No plugin were selected"}})
-        const ineffective = Object.keys(q).filter(key => (key.includes(".")) && (key.split(".").at(0) !== "base") && (!(key in imports.metadata.plugins.base.inputs)) && (key.split(".").at(0) in Plugins)).filter(key => !q[key.split(".").at(0)])
+        if (!Object.keys(Plugins).filter(key => q[key]).length && !parts.length) warnings.push({warning: {message: "No plugin were selected"}})
+        const ineffective = Object.keys(q)
+          .filter(key => key.includes(".") && key.split(".").at(0) !== "base" && !(key in imports.metadata.plugins.base.inputs) && key.split(".").at(0) in Plugins)
+          .filter(key => !q[key.split(".").at(0)])
         warnings.push(...ineffective.map(key => ({warning: {message: `"${key}" has no effect because "${key.split(".").at(0)}: true" is not set`}})))
         //Compute rendering
         const {rendered} = await metrics({login, q}, {...arguments[1], convert: ["svg", "png", "jpeg"].includes(q["config.output"]) ? q["config.output"] : null, warnings}, arguments[2])
@@ -171,7 +160,10 @@ export default async function metrics({login, q}, {graphql, rest, plugins, conf,
       //Rendering template source
       let rendered = source.replace(/\{\{ (?<content>[\s\S]*?) \}\}/g, "{%= $<content> %}")
       console.debug(rendered)
-      for (const delimiters of [{openDelimiter: "<", closeDelimiter: ">"}, {openDelimiter: "{", closeDelimiter: "}"}])
+      for (const delimiters of [
+        {openDelimiter: "<", closeDelimiter: ">"},
+        {openDelimiter: "{", closeDelimiter: "}"},
+      ])
         rendered = await ejs.render(rendered, {...data, s: imports.s, f: imports.format, embed}, {views, async: true, ...delimiters})
       console.debug(`metrics/compute/${login} > success`)
       //Output
@@ -194,33 +186,25 @@ export default async function metrics({login, q}, {graphql, rest, plugins, conf,
     let rendered = await ejs.render(image, {...data, s: imports.s, f: imports.format, style, fonts}, {views, async: true})
 
     //Additional transformations
-    if (q["config.twemoji"])
-      rendered = await imports.svg.twemojis(rendered)
-    if (q["config.gemoji"])
-      rendered = await imports.svg.gemojis(rendered, {rest})
-    if (q["config.octicon"])
-      rendered = await imports.svg.octicons(rendered)
+    if (q["config.twemoji"]) rendered = await imports.svg.twemojis(rendered)
+    if (q["config.gemoji"]) rendered = await imports.svg.gemojis(rendered, {rest})
+    if (q["config.octicon"]) rendered = await imports.svg.octicons(rendered)
     //Optimize rendering
-    if ((conf.settings?.optimize === true) || (conf.settings?.optimize?.includes?.("css")))
-      rendered = await imports.svg.optimize.css(rendered)
-    if ((conf.settings?.optimize === true) || (conf.settings?.optimize?.includes?.("xml")))
-      rendered = await imports.svg.optimize.xml(rendered, q)
-    if ((conf.settings?.optimize === true) || (conf.settings?.optimize?.includes?.("svg")))
-      rendered = await imports.svg.optimize.svg(rendered, q, experimental)
+    if (conf.settings?.optimize === true || conf.settings?.optimize?.includes?.("css")) rendered = await imports.svg.optimize.css(rendered)
+    if (conf.settings?.optimize === true || conf.settings?.optimize?.includes?.("xml")) rendered = await imports.svg.optimize.xml(rendered, q)
+    if (conf.settings?.optimize === true || conf.settings?.optimize?.includes?.("svg")) rendered = await imports.svg.optimize.svg(rendered, q, experimental)
     //Verify svg
-    if ((verify) && (imports.metadata.plugins.core.extras("verify", {...conf.settings, error: false}))) {
+    if (verify && imports.metadata.plugins.core.extras("verify", {...conf.settings, error: false})) {
       console.debug(`metrics/compute/${login} > verify SVG`)
       let libxmljs = null
       try {
         libxmljs = (await import("libxmljs2")).default
-      }
-      catch (error) {
+      } catch (error) {
         console.debug(`metrics/compute/${login} > failed to import libxmljs2 (${error}), ignoring SVG verification`)
       }
       if (!libxmljs) {
         const parsed = libxmljs.parseXml(rendered)
-        if (parsed.errors.length)
-          throw new Error(`Malformed SVG : \n${parsed.errors.join("\n")}`)
+        if (parsed.errors.length) throw new Error(`Malformed SVG : \n${parsed.errors.join("\n")}`)
         console.debug(`metrics/compute/${login} > verified SVG, no parsing errors found`)
       }
     }
@@ -231,19 +215,17 @@ export default async function metrics({login, q}, {graphql, rest, plugins, conf,
     //Result
     console.debug(`metrics/compute/${login} > success`)
     return {rendered, mime, errors}
-  }
-  //Internal error
-  catch (error) {
+  } catch (error) {
+    //Internal error
     //User not found
-    if (((Array.isArray(error.errors)) && (error.errors[0].type === "NOT_FOUND")))
-      throw new Error("user not found")
+    if (Array.isArray(error.errors) && error.errors[0].type === "NOT_FOUND") throw new Error("user not found")
     //Generic error
     throw error
   }
 }
 
 //Metrics insights
-;(metrics as any).insights = async function({login}, {graphql, rest, conf, callbacks}, {Plugins, Templates}) {
+;(metrics as any).insights = async function ({login}, {graphql, rest, conf, callbacks}, {Plugins, Templates}) {
   return metrics({login, q: (metrics as any).insights.q}, {graphql, rest, plugins: (metrics as any).insights.plugins, conf, callbacks, convert: "json"}, {Plugins, Templates})
 }
 ;(metrics as any).insights.q = {
@@ -293,7 +275,7 @@ export default async function metrics({login, q}, {graphql, rest, plugins, conf,
 }
 
 //Metrics insights static render
-;(metrics as any).insights.output = async function({login, imports, conf}, {graphql, rest, Plugins, Templates}) {
+;(metrics as any).insights.output = async function ({login, imports, conf}, {graphql, rest, Plugins, Templates}) {
   //Server
   console.debug(`metrics/compute/${login} > insights`)
   const server = `http://localhost:${conf.settings.port}`

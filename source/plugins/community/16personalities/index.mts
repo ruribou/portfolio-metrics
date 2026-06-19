@@ -1,16 +1,14 @@
 // @ts-nocheck -- TODO(ts): remove and type this plugin (staged migration)
 //Setup
-export default async function({login, q, imports, data, account}, {enabled = false, extras = false} = {}) {
+export default async function ({login, q, imports, data, account}, {enabled = false, extras = false} = {}) {
   //Plugin execution
   try {
     //Check if plugin is enabled and requirements are met
-    if ((!q["16personalities"]) || (!imports.metadata.plugins["16personalities"].enabled(enabled, {extras})))
-      return null
+    if (!q["16personalities"] || !imports.metadata.plugins["16personalities"].enabled(enabled, {extras})) return null
 
     //Load inputs
     let {url, sections, scores} = imports.metadata.plugins["16personalities"].inputs({data, account, q})
-    if (!url)
-      throw {error: {message: "URL is not set"}}
+    if (!url) throw {error: {message: "URL is not set"}}
 
     //Start puppeteer and navigate to page
     console.debug(`metrics/compute/${login}/plugins > 16personalities > starting browser`)
@@ -41,12 +39,14 @@ export default async function({login, q, imports, data, account}, {enabled = fal
     //Format data
     const {color} = raw
     const type = raw.type.replace("(", "").replace(")", "").trim()
-    const personality = await Promise.all(raw.personality.map(async ({category, value, image, text}) => ({
-      category,
-      value: value.replace(`(${type})`, "").trim(),
-      image: await imports.imgb64(image),
-      text: text.replace(`${category}\n${value}\n`, "").trim(),
-    })))
+    const personality = await Promise.all(
+      raw.personality.map(async ({category, value, image, text}) => ({
+        category,
+        value: value.replace(`(${type})`, "").trim(),
+        image: await imports.imgb64(image),
+        text: text.replace(`${category}\n${value}\n`, "").trim(),
+      })),
+    )
     const traits = raw.traits.map(({category, value, score, text}) => ({
       category,
       value: `${value[0]}${value.substring(1).toLocaleLowerCase()}`,
@@ -56,9 +56,8 @@ export default async function({login, q, imports, data, account}, {enabled = fal
 
     //Results
     return {sections, color, type, personality, traits}
-  }
-  //Handle errors
-  catch (error) {
+  } catch (error) {
+    //Handle errors
     throw imports.format.error(error)
   }
 }

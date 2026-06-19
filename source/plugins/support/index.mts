@@ -1,11 +1,10 @@
 // @ts-nocheck -- TODO(ts): remove and type this plugin (staged migration)
 //Setup
-export default async function({login, q, imports, data, account}, {enabled = false, extras = false} = {}) {
+export default async function ({login, q, imports, data, account}, {enabled = false, extras = false} = {}) {
   //Plugin execution
   try {
     //Check if plugin is enabled and requirements are met
-    if ((!q.support) || (!imports.metadata.plugins.support.enabled(enabled, {extras})))
-      return null
+    if (!q.support || !imports.metadata.plugins.support.enabled(enabled, {extras})) return null
 
     //Load inputs
     imports.metadata.plugins.stackoverflow.inputs({data, account, q})
@@ -23,8 +22,7 @@ export default async function({login, q, imports, data, account}, {enabled = fal
       const frame = page.mainFrame()
       try {
         await frame.waitForSelector(".user-profile-names", {timeout: 5000})
-      }
-      catch {
+      } catch {
         throw {error: {message: "Account does not exists on github.community"}}
       }
     }
@@ -37,25 +35,22 @@ export default async function({login, q, imports, data, account}, {enabled = fal
       Object.assign(
         result.stats,
         Object.fromEntries(
-          (await frame.evaluate(() =>
-            [...document.querySelectorAll(".stats-section li")].map(el => [
-              el.querySelector(".label").innerText.trim().toLocaleLowerCase(),
-              el.querySelector(".value").innerText.trim().toLocaleLowerCase(),
-            ])
-          )).map(([key, value]) => {
-            switch (true) {
-              case /solutions?/.test(key):
-                return ["solutions", Number(value)]
-              case /posts? created/.test(key):
-                return ["posts", Number(value)]
-              case /topics? created/.test(key):
-                return ["topics", Number(value)]
-              case /received/.test(key):
-                return ["hearts", Number(value)]
-              default:
-                return null
-            }
-          }).filter(kv => kv),
+          (await frame.evaluate(() => [...document.querySelectorAll(".stats-section li")].map(el => [el.querySelector(".label").innerText.trim().toLocaleLowerCase(), el.querySelector(".value").innerText.trim().toLocaleLowerCase()])))
+            .map(([key, value]) => {
+              switch (true) {
+                case /solutions?/.test(key):
+                  return ["solutions", Number(value)]
+                case /posts? created/.test(key):
+                  return ["posts", Number(value)]
+                case /topics? created/.test(key):
+                  return ["topics", Number(value)]
+                case /received/.test(key):
+                  return ["hearts", Number(value)]
+                default:
+                  return null
+              }
+            })
+            .filter(kv => kv),
         ),
       )
     }
@@ -79,9 +74,8 @@ export default async function({login, q, imports, data, account}, {enabled = fal
 
     //Results
     return result
-  }
-  //Handle errors
-  catch (error) {
+  } catch (error) {
+    //Handle errors
     throw imports.format.error(error)
   }
 }

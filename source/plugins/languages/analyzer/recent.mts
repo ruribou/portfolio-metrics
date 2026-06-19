@@ -1,8 +1,8 @@
 // @ts-nocheck -- TODO(ts): remove and type this plugin (staged migration)
 //Imports
 import linguist from "linguist-js"
-import { filters } from "../../../app/metrics/utils.mts"
-import { Analyzer } from "./analyzer.mts"
+import {filters} from "../../../app/metrics/utils.mts"
+import {Analyzer} from "./analyzer.mts"
 
 /**Recent analyzer */
 export class RecentAnalyzer extends Analyzer {
@@ -31,15 +31,17 @@ export class RecentAnalyzer extends Analyzer {
   async patches() {
     //Fetch commits from recent activity
     this.debug(`fetching patches from last ${this.days || ""} days up to ${this.load || "∞"} events`)
-    const commits = [], pages = Math.ceil((this.load || Infinity) / 100)
+    const commits = [],
+      pages = Math.ceil((this.load || Infinity) / 100)
     if (this.context.mode === "repository") {
       try {
-        const {data: {default_branch: branch}} = await this.rest.repos.get(this.context)
+        const {
+          data: {default_branch: branch},
+        } = await this.rest.repos.get(this.context)
         this.context.branch = branch
         this.results.branch = branch
         this.debug(`default branch for ${this.context.owner}/${this.context.repo} is ${branch}`)
-      }
-      catch (error) {
+      } catch (error) {
         this.debug(`failed to get default branch for ${this.context.owner}/${this.context.repo} (${error})`)
       }
     }
@@ -48,14 +50,13 @@ export class RecentAnalyzer extends Analyzer {
         this.debug(`fetching events page ${page}`)
         commits.push(
           ...(await (this.context.mode === "repository" ? this.rest.activity.listRepoEvents(this.context) : this.rest.activity.listEventsForAuthenticatedUser({username: this.login, per_page: 100, page}))).data
-            .filter(({type, payload}) => (type === "PushEvent") && ((this.context.mode !== "repository") || ((this.context.mode === "repository") && (payload?.ref?.includes?.(`refs/heads/${this.context.branch}`)))))
-            .filter(({actor}) => (this.account === "organization") || (this.context.mode === "repository") ? true : !filters.text(actor.login, [this.login], {debug: false}))
+            .filter(({type, payload}) => type === "PushEvent" && (this.context.mode !== "repository" || (this.context.mode === "repository" && payload?.ref?.includes?.(`refs/heads/${this.context.branch}`))))
+            .filter(({actor}) => (this.account === "organization" || this.context.mode === "repository" ? true : !filters.text(actor.login, [this.login], {debug: false})))
             .filter(({repo: {name: repo}}) => !this.ignore(repo))
-            .filter(({created_at}) => ((!this.days) || (new Date(created_at) > new Date(Date.now() - this.days * 24 * 60 * 60 * 1000)))),
+            .filter(({created_at}) => !this.days || new Date(created_at) > new Date(Date.now() - this.days * 24 * 60 * 60 * 1000)),
         )
       }
-    }
-    catch {
+    } catch {
       this.debug("no more page to load")
     }
     this.debug(`fetched ${commits.length} commits`)
@@ -65,13 +66,13 @@ export class RecentAnalyzer extends Analyzer {
     //Retrieve edited files and filter edited lines (those starting with +/-) from patches
     this.debug("fetching patches")
     const patches = [
-      ...await Promise.allSettled(
+      ...(await Promise.allSettled(
         commits
           .flatMap(({payload}) => payload.commits)
           .filter(({committer}) => filters.text(committer?.email, this.authoring, {debug: false}))
           .map(commit => commit.url)
           .map(async commit => (await this.rest.request(commit)).data),
-      ),
+      )),
     ]
       .filter(({status}) => status === "fulfilled")
       .map(({value}) => value)
@@ -88,8 +89,7 @@ export class RecentAnalyzer extends Analyzer {
             patch,
           }
           for (const line of patch.split("\n")) {
-            if ((!/^[-+]/.test(line)) || (!line.trim().length))
-              continue
+            if (!/^[-+]/.test(line) || !line.trim().length) continue
             if (this.markers.line.test(line)) {
               const {op = "+", content = ""} = line.match(this.markers.line)?.groups ?? {}
               const size = Buffer.byteLength(content, "utf-8")
@@ -113,11 +113,14 @@ export class RecentAnalyzer extends Analyzer {
       edited.add(edition.path)
 
       //Guess file language with linguist
-      const {files: {results: files}, languages: {results: languages}, unknown} = await linguist(edition.path, {fileContent: edition.patch})
+      const {
+        files: {results: files},
+        languages: {results: languages},
+        unknown,
+      } = await linguist(edition.path, {fileContent: edition.patch})
       Object.assign(cache.files, files)
       Object.assign(cache.languages, languages)
-      if (!(edition.path in cache.files))
-        cache.files[edition.path] = "<unknown>"
+      if (!(edition.path in cache.files)) cache.files[edition.path] = "<unknown>"
 
       //Aggregate statistics
       const language = cache.files[edition.path]
@@ -131,8 +134,7 @@ export class RecentAnalyzer extends Analyzer {
       if (language === "<unknown>") {
         result.missed.lines += numbers.length
         result.missed.bytes += unknown.bytes
-      }
-      else {
+      } else {
         result.lines[language] = (result.lines[language] ?? 0) + numbers.length
         result.stats[language] = (result.stats[language] ?? 0) + added
       }
