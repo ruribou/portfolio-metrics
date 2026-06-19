@@ -5,25 +5,29 @@
 # The Dockerfile layers this fork's source on top of the upstream pre-built image, so
 # the build is now trivial (a base pull + a source COPY) and finishes in seconds. The
 # timeout below is a guardrail against the multi-hour hangs the from-scratch build hit.
+#
+# The action's forked path pulls `ghcr.io/<owner>/<repo>:<ref>` where <ref> is whatever
+# the consumer pinned (`@v1`, `@v1.2.3`, `@main`, ...). So this workflow publishes the
+# image under every tag a consumer is likely to reference: the full version, the major
+# and major.minor aliases, `latest`, and the branch name.
+#
+# Note: no `paths` filter — combining it with `tags` makes tag pushes skip the build,
+# and the layered build is cheap enough to run on every push.
 name: Build and publish Docker image
 
 on:
   push:
     branches:
       - main
-    paths:
-      - Dockerfile
-      - package.json
-      - package-lock.json
-      - source/**
-      - .github/workflows/build-docker.yml
+    tags:
+      - 'v*.*.*'
   workflow_dispatch:
 
 permissions:
   contents: read
   packages: write
 
-# A newer push to the same branch supersedes an in-flight build.
+# A newer push to the same ref supersedes an in-flight build.
 concurrency:
   group: build-docker-${{ github.ref }}
   cancel-in-progress: true
@@ -45,10 +49,29 @@ jobs:
 
       - name: Build and push image
         run: |
+          set -euo pipefail
           IMAGE=ghcr.io/$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')
-          TAG=$(echo '${{ github.ref_name }}' | sed 's@[^a-zA-Z0-9._-]@-@g')
           SHA=sha-$(echo '${{ github.sha }}' | cut -c1-7)
-          echo "Building $IMAGE:$TAG ($IMAGE:$SHA)"
-          docker build -t "$IMAGE:$TAG" -t "$IMAGE:$SHA" .
-          docker push "$IMAGE:$TAG"
-          docker push "$IMAGE:$SHA"
+
+          # Resolve the set of image tags to publish from the triggering ref.
+          TAGS=()
+          REF='${{ github.ref }}'
+          if [[ "$REF" == refs/tags/* ]]; then
+            VERSION="${REF#refs/tags/}"
+            TAGS+=("$VERSION")
+            if [[ "$VERSION" =~ ^v([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+              # Moving aliases so consumers can pin `@v1` or `@v1.2` and still get this build.
+              TAGS+=("v${BASH_REMATCH[1]}")
+              TAGS+=("v${BASH_REMATCH[1]}.${BASH_REMATCH[2]}")
+              TAGS+=("latest")
+            fi
+          else
+            TAGS+=("$(echo '${{ github.ref_name }}' | sed 's@[^a-zA-Z0-9._-]@-@g')")
+          fi
+          TAGS+=("$SHA")
+
+          echo "Publishing $IMAGE with tags: ${TAGS[*]}"
+          BUILD_ARGS=()
+          for TAG in "${TAGS[@]}"; do BUILD_ARGS+=(-t "$IMAGE:$TAG"); done
+          docker build "${BUILD_ARGS[@]}" .
+          for TAG in "${TAGS[@]}"; do docker push "$IMAGE:$TAG"; done
