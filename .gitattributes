@@ -5,6 +5,14 @@
 source/templates/** linguist-vendored
 source/app/web/statics/style.vars.css linguist-vendored
 
+# Test fixtures / mocks (fork-inherited, not part of the app's own language stats)
+tests/mocks/** linguist-vendored
+
+# Tooling / infra (not application source)
+eslint.config.js linguist-vendored
+Dockerfile linguist-vendored
+source/app/action/run.sh linguist-vendored
+
 # Hidden files
 .github/** -linguist-detectable
 
