@@ -142,18 +142,17 @@ jobs:
 
 ## その他のセットアップ方法
 
-GitHub Action 以外にも、用途に応じて複数の方法があります。
+GitHub Action 以外に、用途に応じて次の方法があります。
 
 - [Docker コマンドで実行（一回限りのレンダリング向け）](/.github/readme/partials/documentation/setup/docker.md)
-- [共有インスタンスを使う（最も手軽）](/.github/readme/partials/documentation/setup/shared.md)
-- [Web インスタンスをデプロイする](/.github/readme/partials/documentation/setup/web.md)
 - [ローカル開発環境のセットアップ](/.github/readme/partials/documentation/setup/local.md)
 
 ## ライセンス
 
 ```
 MIT License
-Copyright (c) 2020-present lowlighter
+Copyright (c) 2020-present lowlighter (original work)
+Copyright (c) 2026-present ruribou (fork modifications)
 ```
 
 本リポジトリは [lowlighter/metrics](https://github.com/lowlighter/metrics) の fork です。元の作者と全コントリビューターに感謝します。
