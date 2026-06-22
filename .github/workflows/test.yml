@@ -3,8 +3,9 @@
 # repo, so each check runs as its own job for clear, independent signal.
 #
 # Role: this is the WORK-BRANCH / PR quality gate. It only validates (static
-# checks + a boot smoke) and never publishes anything. Releasing the runtime
-# image is build-docker.yml's job, which runs only on main and version tags.
+# checks; the build dryrun runs the whole .ts import graph through tsx) and
+# never publishes anything. Releasing the runtime image is build-docker.yml's
+# job, which runs only on main and version tags.
 #
 # The upstream Docker render test (~200 sequential Puppeteer renders, 6h job
 # timeout) and CodeQL are intentionally NOT here. The runtime image is built and
@@ -98,45 +99,3 @@ jobs:
       # if any module fails to import/transpile, this fails.
       - name: Build (dryrun)
         run: npm run build
-
-  boot:
-    name: Boot smoke (web instance starts under tsx)
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v7
-      - name: Setup NodeJS
-        uses: actions/setup-node@v6
-        with:
-          node-version: 26
-          cache: npm
-      - name: Install dependencies
-        run: npm ci --legacy-peer-deps
-        env:
-          PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: "true"
-      # End-to-end check that the renamed .ts/ESM import graph resolves at
-      # runtime: boot the web instance in mocked SANDBOX mode and wait until it
-      # reports "Server ready" (no browser render needed, so no Chromium).
-      - name: Boot web instance
-        env:
-          SANDBOX: "true"
-          PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: "true"
-        run: |
-          node --import tsx source/app/web/index.ts > web.log 2>&1 &
-          PID=$!
-          for i in $(seq 1 60); do
-            if grep -q "Server ready" web.log; then
-              echo "::notice::web instance booted under tsx"
-              kill "$PID" 2>/dev/null || true
-              exit 0
-            fi
-            if grep -qiE "throw|unhandled|cannot find|err_module" web.log; then
-              echo "::error::web instance failed to boot"; cat web.log
-              kill "$PID" 2>/dev/null || true
-              exit 1
-            fi
-            sleep 1
-          done
-          echo "::error::timed out waiting for 'Server ready'"; cat web.log
-          kill "$PID" 2>/dev/null || true
-          exit 1

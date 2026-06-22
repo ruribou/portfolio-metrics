@@ -2,7 +2,6 @@
 import core from "@actions/core"
 import github from "@actions/github"
 import octokit from "@octokit/graphql"
-import processes from "child_process"
 import fs from "fs/promises"
 import paths from "path"
 import sgit from "simple-git"
@@ -141,8 +140,8 @@ function quit(reason) {
       ...config
     } = metadata.plugins.core.inputs.action({core, preset})
     const q = {...query, ...(_repo ? {repo: _repo} : null), template}
-    const _output = ["svg", "jpeg", "png", "json", "markdown", "markdown-pdf", "insights"].includes(config["config.output"]) ? config["config.output"] : (metadata.templates[template]?.formats?.[0] ?? null)
-    const filename = _filename.replace(/[*]/g, {jpeg: "jpg", markdown: "md", "markdown-pdf": "pdf", insights: "html"}[_output] ?? _output ?? "*")
+    const _output = ["svg", "jpeg", "png", "json", "markdown", "markdown-pdf"].includes(config["config.output"]) ? config["config.output"] : (metadata.templates[template]?.formats?.[0] ?? null)
+    const filename = _filename.replace(/[*]/g, {jpeg: "jpg", markdown: "md", "markdown-pdf": "pdf"}[_output] ?? _output ?? "*")
 
     //Docker image
     if (_image) info("Using prebuilt image", _image)
@@ -332,21 +331,6 @@ function quit(reason) {
     const convert = _output || null
     Object.assign(q, config)
     if (/markdown/.test(convert)) info("Markdown cache", _markdown_cache)
-    if (/insights/.test(convert)) {
-      try {
-        await new Promise<void>(async (solve, reject) => {
-          let stdout = ""
-          setTimeout(() => reject("Timeout while waiting for Insights webserver"), 5 * 60 * 1000)
-          const web = await processes.spawn("node", ["--import", "tsx", "/metrics/source/app/web/index.ts"], {env: {...process.env}})
-          web.stdout.on("data", data => (console.debug(`web > ${data}`), (stdout += data), /Server ready !/.test(stdout) ? solve() : null))
-          web.stderr.on("data", data => console.debug(`web > ${data}`))
-        })
-        info("Insights webserver", "ok")
-      } catch (error) {
-        info("Insights webserver", "(failed to initialize)")
-        throw error
-      }
-    }
 
     //Base content
     info.break()

@@ -356,7 +356,6 @@ inputs:
       - `json`: JSON data dump
       - `markdown`: Markdown rendered file
       - `markdown-pdf`: PDF from markdown rendered file
-      - `insights`: Metrics Insights self-contained HTML file (not configurable)
     type: string
     default: auto
     values:
@@ -367,7 +366,6 @@ inputs:
       - json
       - markdown
       - markdown-pdf
-      - insights
 
   config_presets:
     description: |

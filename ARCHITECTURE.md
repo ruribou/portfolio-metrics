@@ -11,13 +11,6 @@ This section explain how *metrics* is structured.
 * `source/app/action/` contains GitHub action files
   * `index.ts` contains GitHub action entry point
   * `action.yml` contains GitHub action templated descriptor
-* `source/app/web/` contains web instance files
-  * `index.ts` contains web instance entry point
-  * `instance.ts` contains web instance source code
-  * `settings.example.json` contains web instance settings example
-  * `statics/` contains web instance static files
-    * `app.js` contains web instance client source code
-    * `app.placeholder.js` contains web instance placeholder mocked data
 * `source/plugins/*/` contains source code of plugins
   * `README.md` contains plugin documentation
   * `metadata.yml` contains plugin metadata
@@ -72,14 +65,13 @@ As for other external services (Twitter, Spotify, PageSpeed, ...), metrics use t
 
 In last resort, puppeteer is seldom used to scrap websites, though its use tends to make things slow and unstable (as it'll break upon HTML structural changes).
 
-### 💬 Web instance and GitHub action similarities
+### 💬 GitHub action input handling
 
 Historically, metrics used to be only a web service without any customization possible. The single input was a GitHub username, and was composed of what is now `base` content (along with `languages` and `followup` plugin, which is why they can be computed without any additional queries). That's why `base` content is handled a bit differently from plugins.
 
-As it gathered more and more plugins over time, generating a single user's metrics was becoming costly both in terms of resources but also in APIs requests. It was thus decided to switch to GitHub Action. At first, it was just a way to explore possibilities of this GitHub feature, but now it's basically the full-experience of metrics (unless you use your own  self-hosted instance).
+As it gathered more and more plugins over time, generating a single user's metrics was becoming costly both in terms of resources but also in APIs requests. It was thus decided to switch to GitHub Action, which is now the only entrypoint of this fork (the legacy web instance has been removed).
 
-Both web instance and Action actually use the same entrypoint so they basically have the same features.
-Action just format inputs into a query-like object (similarly to when url params are parsed by web instance), from which metrics compute the rendered image. It also makes testing easier, as test cases can be reused since only inputs differs.
+The Action formats inputs into a query-like object, from which metrics compute the rendered image.
 
 ## 📦 Packages reference
 

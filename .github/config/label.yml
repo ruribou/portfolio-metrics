@@ -1,8 +1,5 @@
-📊 metrics embed:
+📊 metrics action:
   - source/app/action/**
-  - source/app/web/**
-✨ metrics insights:
-  - source/app/web/statics/insights/**
 
 🧩 plugins:
   - source/plugins/**

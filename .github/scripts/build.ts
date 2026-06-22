@@ -16,7 +16,6 @@ console.log(`Mode: ${mode}`)
 //Paths
 const __metrics = paths.join(paths.dirname(url.fileURLToPath(import.meta.url)), "../..")
 const __action = paths.join(__metrics, "source/app/action")
-const __web = paths.join(__metrics, "source/app/web")
 const __readme = paths.join(__metrics, ".github/readme")
 const __documentation = paths.join(__metrics, ".github/readme/partials/templated")
 const __templates = paths.join(paths.join(__metrics, "source/templates/"))
@@ -80,7 +79,6 @@ for (const step of ["config", "documentation"]) {
   switch (step) {
     case "config":
       await update({source: paths.join(__action, "action.yml"), output: "action.yml", context: {runsh: `${await fs.readFile(paths.join(__action, "run.sh"), "utf8")}`}})
-      await update({source: paths.join(__web, "settings.example.json"), output: "settings.example.json"})
       break
     case "documentation":
       await update({source: paths.join(__documentation, "README.md"), output: "README.md", options: {root: __readme}})

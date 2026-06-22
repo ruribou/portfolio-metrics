@@ -3,9 +3,6 @@ import {spawn, spawnSync} from "node:child_process"
 import fs from "node:fs"
 import path from "node:path"
 import {fileURLToPath} from "node:url"
-import {faker} from "@faker-js/faker"
-import axios from "axios"
-import ejs from "ejs"
 import yaml from "js-yaml"
 import {afterAll, beforeAll, describe, expect, test} from "vitest"
 
@@ -30,57 +27,13 @@ action.run = async vars =>
     })
   })
 
-//Web instance
-const web = {}
-web.run = async vars => (await axios.get(`http://localhost:3000/lowlighter?${new URLSearchParams(Object.fromEntries(Object.entries(vars).map(([key, value]) => [key.replace(/^plugin_/, "").replace(/_/g, "."), value])))}`)).status === 200
-web.start = async () =>
-  new Promise(solve => {
-    let stdout = ""
-    web.instance = spawn("node", ["--import", "tsx", "source/app/web/index.ts"], {env: {...process.env, SANDBOX: true}})
-    web.instance.stdout.on("data", data => (stdout += data, /Server ready !/.test(stdout) ? solve() : null))
-    web.instance.stderr.on("data", data => console.error(`${data}`))
-  })
-web.stop = async () => await web.instance.kill("SIGKILL")
-
-//Web instance placeholder
-await import("./../source/app/web/statics/embed/app.placeholder.js")
-const placeholder = globalThis.placeholder
-delete globalThis.placeholder
-placeholder.init({
-  faker,
-  ejs,
-  axios: {
-    async get(url) {
-      return axios.get(`http://localhost:3000${url}`)
-    },
-  },
-})
-placeholder.run = async vars => {
-  const options = Object.fromEntries(Object.entries(vars).map(([key, value]) => [key.replace(/^plugin_/, "").replace(/_/g, "."), value]))
-  const enabled = Object.fromEntries(Object.entries(vars).filter(([key]) => /^plugin_[a-z]+$/.test(key)))
-  const config = Object.fromEntries(Object.entries(options).filter(([key]) => /^config[.]/.test(key)))
-  const base = Object.fromEntries(Object.entries(options).filter(([key]) => /^base[.]/.test(key)))
-  return typeof await placeholder({
-    templates: {selected: vars.template},
-    plugins: {enabled: {...enabled, base}, options},
-    config,
-    version: "TEST",
-    user: "lowlighter",
-    avatar: "https://github.com/lowlighter.png",
-  }) === "string"
-}
-
 //Setup
 beforeAll(async () => {
   //Clean community template
   await fs.promises.rm(path.join(__dirname, "../source/templates/@classic"), {recursive: true, force: true})
-  //Start web instance
-  await web.start()
 })
 //Teardown
 afterAll(async () => {
-  //Stop web instance
-  await web.stop()
   //Clean community template
   await fs.promises.rm(path.join(__dirname, "../source/templates/@classic"), {recursive: true, force: true})
 })
@@ -124,32 +77,5 @@ describe("GitHub Action", () =>
         test.skip(name, () => null)
       else
         test(name, async () => expect(await action.run({template, base: "", query: JSON.stringify(query), plugins_errors_fatal: true, dryrun: true, use_mocked_data: true, verify: true, retries: 1, ...input})).toBe(true), timeout)
-    }
-  }))
-
-describe("Web instance", () =>
-  describe.each([
-    ["classic", {}],
-    ["terminal", {}],
-    ["repository", {repo: "metrics"}],
-  ])("Template : %s", (template, query) => {
-    for (const [name, input, {skip = [], modes = [], timeout} = {}] of tests) {
-      if ((skip.includes(template)) || ((modes.length) && (!modes.includes("web"))))
-        test.skip(name, () => null)
-      else
-        test(name, async () => expect(await web.run({template, base: 0, ...query, plugins_errors_fatal: true, verify: true, ...input})).toBe(true), timeout)
-    }
-  }))
-
-describe("Web instance (placeholder)", () =>
-  describe.each([
-    ["classic", {}],
-    ["terminal", {}],
-  ])("Template : %s", (template, query) => {
-    for (const [name, input, {skip = [], modes = [], timeout} = {}] of tests) {
-      if ((skip.includes(template)) || ((modes.length) && (!modes.includes("placeholder"))))
-        test.skip(name, () => null)
-      else
-        test(name, async () => expect(await placeholder.run({template, base: 0, ...query, ...input})).toBe(true), timeout)
     }
   }))

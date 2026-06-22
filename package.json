@@ -5,7 +5,6 @@
   "main": "source/app/action/index.ts",
   "type": "module",
   "scripts": {
-    "start": "node --import tsx source/app/web/index.ts",
     "test": "vitest run",
     "test-contrib": "vitest run ci.test.ts",
     "test-presets": "vitest run presets.test.ts",
@@ -16,10 +15,7 @@
     "format": "prettier --write \"source/**/*.ts\" \".github/scripts/**/*.ts\"",
     "format:check": "prettier --check \"source/**/*.ts\" \".github/scripts/**/*.ts\"",
     "build": "node --import tsx .github/scripts/build.ts",
-    "presets": "node --import tsx .github/scripts/presets_examples.ts",
     "quickstart": "node --import tsx .github/scripts/quickstart/index.ts",
-    "preview": "node --import tsx .github/scripts/preview.ts",
-    "dev": "nodemon --exec \"node --import tsx\" source/app/web/index.ts -e ts,css,ejs,json",
     "postinstall": "node node_modules/puppeteer/install.js",
     "indepth": "node --import tsx source/plugins/languages/analyzers.ts"
   },
