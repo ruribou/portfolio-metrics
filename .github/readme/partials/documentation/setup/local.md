@@ -1,45 +1,40 @@
-# 🔧 Local setup for development (~20 min)
+# ローカル開発環境のセットアップ
 
-## 0️ Prepare your machine
+この fork のソースを手元で動かし、変更やテストを行うための手順です。
 
-A machine with a recent version of [NodeJS](https://nodejs.org) is required (see used version in [Dockerfile](/Dockerfile#L1-L2)).
+## 必要なもの
 
-## 1️ Clone repository and install dependencies
+- [Node.js](https://nodejs.org)（新しめのバージョン）
 
-Run the following command to clone this repository and install dependencies.
+## セットアップ
+
+リポジトリを clone して依存関係をインストールします。
 
 ```shell
-git clone https://github.com/lowlighter/metrics.git
-cd metrics/
+git clone https://github.com/ruribou/portfolio-metrics.git
+cd portfolio-metrics
 npm install
-cp settings.example.json settings.json
 ```
 
-## 2️ Setup and configure *metrics*
+## テスト・チェック
 
-Follow [🏗️ Deploying a web instance (~20 min)](/.github/readme/partials/documentation/setup/web.md) guide except docker-related sections.
+テストは [vitest](https://vitest.dev/) で実行します。外部 API を消費しないよう、データは mock 化されています。
 
-Once read, start local instance using the following command:
 ```shell
-npm start
+npm test           # テストを実行
+npm run typecheck  # 型チェック
+npm run lint       # Lint
 ```
 
-## 3️ Start hacking!
+## プラグイン / テンプレートの雛形を作る
 
-Connect to your web server using `http://localhost:{port}` and start hacking!
+新しいプラグインやテンプレートのひな形を生成できます。
 
-For quick testing, it is advised to directly craft URLs, rather than using the web interface.
-
-*Example: test a new plugin*
 ```shell
-https://localhost:{port}/username?base=0&newplugin=1&newplugin.option1=hello&newplugin.option2=world)
+npm run quickstart -- plugin <name>
+npm run quickstart -- template <name>
 ```
 
-## *️⃣ Testing changes
+## 画像生成を手元で試す
 
-Testing is done through [jest](https://github.com/facebook/jest) framework.
-
-To avoid consuming APIs requests and causing additional charges on external services, data are [mocked](/tests/mocks/index.ts) using [JavaScript Proxies](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy) and [Faker.js](https://github.com/faker-js/faker) with randomly generated data.
-
-Since tests are pretty long to run, it is advised to just let GitHub Actions do the testing.
-
+レンダリングを 1 枚だけ試したい場合は、[Docker コマンドで実行](/.github/readme/partials/documentation/setup/docker.md)が手軽です。

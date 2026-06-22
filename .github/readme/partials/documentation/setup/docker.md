@@ -1,18 +1,28 @@
-# 🐳 Using command line with docker (~2 min)
+# Docker コマンドで実行
 
-## 0️ Prepare your machine
+GitHub Action を設定せずに、手元で画像を 1 枚だけ生成したいときに向いた方法です。
 
-A machine with a recent version of [docker](https://www.docker.com/) is required.
+## 必要なもの
 
-## 1️ Run docker image
+- [Docker](https://www.docker.com/)（新しめのバージョン）
 
-The command to use is similar to the following:
+## 実行する
+
+action のオプションは、名前を大文字にして `INPUT_` を付けた環境変数として渡します（例: `user` → `INPUT_USER`、`plugin_languages` → `INPUT_PLUGIN_LANGUAGES`）。
+
+生成された画像は、マウントした `/renders` ディレクトリに出力されます。
+
 ```shell
-docker run --rm --env INPUT_TOKEN=**** --env INPUT_USER=user --volume=/tmp:/renders ghcr.io/lowlighter/metrics:latest
+docker run --rm \
+  --env INPUT_TOKEN=**** \
+  --env INPUT_USER=<ユーザー名> \
+  --env INPUT_PLUGIN_LANGUAGES=yes \
+  --volume /tmp:/renders \
+  ghcr.io/ruribou/portfolio-metrics:latest
 ```
 
-To pass parameters, pass environment variable with the same name as the corresponding action option but in uppercase and prefixed with `INPUT_`.
+上のコマンドなら `/tmp/github-metrics.svg` が生成されます。
 
-Generated files will be created in the mounted `/renders` directory.
+`INPUT_TOKEN` には [Personal Access Token](https://github.com/settings/tokens) を指定します。タグは `latest` のほか、`@main` や `v1.1.1` のような特定バージョンも利用できます。
 
-> 💡 When running *metrics* with docker, [`output_action`](/source/plugins/core/README.md#-configuring-output-action) will automatically default to `none` instead. To use a different output action, both `GITHUB_REPOSITORY` (notice the absence of `INPUT_` prefix) and `INPUT_COMMITTER_TOKEN` (with sufficient permissions) environment variables must be set.
+> 💡 Docker で実行する場合、出力はファイル生成のみ（`output_action` が自動的に `none`）になり、リポジトリへのコミットは行いません。
