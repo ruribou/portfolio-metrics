@@ -1,6 +1,11 @@
 //Imports
-const path = require("path")
-const git = require("simple-git")(path.join(__dirname, ".."))
+import path from "node:path"
+import {fileURLToPath} from "node:url"
+import {simpleGit} from "simple-git"
+import {describe, expect, test} from "vitest"
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const git = simpleGit(path.join(__dirname, ".."))
 
 //Edited files list
 const diff = async () => (await git.diff(["origin/master...", "--name-status"])).split("\n").map(x => x.trim()).filter(x => /^M\s+/.test(x)).map(x => x.replace(/^M\s+/, ""))

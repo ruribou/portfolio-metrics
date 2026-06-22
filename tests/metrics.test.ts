@@ -1,12 +1,15 @@
 //Imports
-const processes = require("child_process")
-const yaml = require("js-yaml")
-const fs = require("fs")
-const path = require("path")
-const url = require("url")
-const axios = require("axios")
-const faker = require("@faker-js/faker").faker
-const ejs = require("ejs")
+import {spawn, spawnSync} from "node:child_process"
+import fs from "node:fs"
+import path from "node:path"
+import {fileURLToPath} from "node:url"
+import {faker} from "@faker-js/faker"
+import axios from "axios"
+import ejs from "ejs"
+import yaml from "js-yaml"
+import {afterAll, beforeAll, describe, expect, test} from "vitest"
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 //GitHub action
 const action = yaml.load(fs.readFileSync(path.join(__dirname, "../action.yml"), "utf8"))
@@ -16,7 +19,7 @@ action.run = async vars =>
   await new Promise((solve, reject) => {
     let [stdout, stderr] = ["", ""]
     const env = {...process.env, ...action.input(vars), GITHUB_REPOSITORY: "lowlighter/metrics"}
-    const child = processes.spawn("node", ["--import", "tsx", "source/app/action/index.ts"], {env})
+    const child = spawn("node", ["--import", "tsx", "source/app/action/index.ts"], {env})
     child.stdout.on("data", data => stdout += data)
     child.stderr.on("data", data => stderr += data)
     child.on("close", code => {
@@ -29,18 +32,18 @@ action.run = async vars =>
 
 //Web instance
 const web = {}
-web.run = async vars => (await axios.get(`http://localhost:3000/lowlighter?${new url.URLSearchParams(Object.fromEntries(Object.entries(vars).map(([key, value]) => [key.replace(/^plugin_/, "").replace(/_/g, "."), value])))}`)).status === 200
+web.run = async vars => (await axios.get(`http://localhost:3000/lowlighter?${new URLSearchParams(Object.fromEntries(Object.entries(vars).map(([key, value]) => [key.replace(/^plugin_/, "").replace(/_/g, "."), value])))}`)).status === 200
 web.start = async () =>
   new Promise(solve => {
     let stdout = ""
-    web.instance = processes.spawn("node", ["--import", "tsx", "source/app/web/index.ts"], {env: {...process.env, SANDBOX: true}})
+    web.instance = spawn("node", ["--import", "tsx", "source/app/web/index.ts"], {env: {...process.env, SANDBOX: true}})
     web.instance.stdout.on("data", data => (stdout += data, /Server ready !/.test(stdout) ? solve() : null))
     web.instance.stderr.on("data", data => console.error(`${data}`))
   })
 web.stop = async () => await web.instance.kill("SIGKILL")
 
 //Web instance placeholder
-require("./../source/app/web/statics/embed/app.placeholder.js")
+await import("./../source/app/web/statics/embed/app.placeholder.js")
 const placeholder = globalThis.placeholder
 delete globalThis.placeholder
 placeholder.init({
@@ -82,9 +85,10 @@ afterAll(async () => {
   await fs.promises.rm(path.join(__dirname, "../source/templates/@classic"), {recursive: true, force: true})
 })
 
-//Load metadata (as jest doesn't support ESM modules, we use this dirty hack)
+//Load metadata (generated in an isolated subprocess so the heavy plugin import
+//graph is evaluated once under tsx, independently of the test runner)
 const metadata = JSON.parse(`${
-  processes.spawnSync("node", ["--import", "tsx", 
+  spawnSync("node", ["--import", "tsx",
     "--input-type",
     "module",
     "--eval",
