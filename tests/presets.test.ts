@@ -1,10 +1,13 @@
 //Imports
-const processes = require("child_process")
-const yaml = require("js-yaml")
-const fss = require("fs")
-const paths = require("path")
+import {execFileSync} from "node:child_process"
+import fss from "node:fs"
+import paths from "node:path"
+import {fileURLToPath} from "node:url"
+import yaml from "js-yaml"
+import {describe, expect, test} from "vitest"
 
 //Git setup
+const __dirname = paths.dirname(fileURLToPath(import.meta.url))
 const __metrics = paths.join(paths.dirname(__dirname, ".."))
 const __presets = paths.join(__metrics, ".presets")
 
@@ -21,7 +24,7 @@ catch {
   if (!/^[-\w\d]+\/[-\w\d]+$/.test(repo))
     throw new Error(`invalid repo: ${repo}`)
   console.log(`cloning: ${repo}@${branch}`)
-  processes.execFileSync("git", ["clone", `https://github.com/${repo}.git`, __presets, "--branch", branch, "--single-branch"])
+  execFileSync("git", ["clone", `https://github.com/${repo}.git`, __presets, "--branch", branch, "--single-branch"])
 }
 
 //Generate presets examples
