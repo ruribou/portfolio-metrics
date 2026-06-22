@@ -19,7 +19,6 @@ describe("Check file changes (checkout your files if needed)", () => {
       "source/plugins/community/README.md",
       "source/templates/README.md",
       "action.yml",
-      "settings.example.json",
       "tests/cases/*",
       ".github/workflows/examples.yml",
       ".github/readme/partials/documentation/compatibility.md",

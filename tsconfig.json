@@ -26,7 +26,6 @@
   "exclude": [
     "node_modules",
     ".github/scripts/quickstart/plugin/**",
-    "source/app/web/statics/**",
     "source/plugins/community/splatoon/token.ts",
     "source/plugins/community/splatoon/s3si/**"
   ]

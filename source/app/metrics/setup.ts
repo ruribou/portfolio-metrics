@@ -17,7 +17,6 @@ const Plugins: Dict = {}
 export default async function ({log = true, sandbox = false, community = {}, extras = false} = {}) {
   //Paths
   const __metrics = path.join(path.dirname(url.fileURLToPath(import.meta.url)), "../../..")
-  const __statics = path.join(__metrics, "source/app/web/statics")
   const __templates = path.join(__metrics, "source/templates")
   const __plugins = path.join(__metrics, "source/plugins")
   const __package = path.join(__metrics, "package.json")
@@ -34,7 +33,6 @@ export default async function ({log = true, sandbox = false, community = {}, ext
     settings: {port: 3000},
     metadata: {},
     paths: {
-      statics: __statics,
       templates: __templates,
       node_modules: __modules,
     },
@@ -185,10 +183,6 @@ export default async function ({log = true, sandbox = false, community = {}, ext
 
   //Load metadata
   conf.metadata = await metadata({log})
-
-  //Modes
-  if (!conf.settings.modes || !conf.settings.modes.length) conf.settings.modes = ["embed", "insights"]
-  logger(`metrics/setup > setup > enabled modes ${JSON.stringify(conf.settings.modes)}`)
 
   //Allowed outputs formats
   if (!conf.settings.outputs || !conf.settings.outputs.length) conf.settings.outputs = (metadata as any).inputs.config_output.values
